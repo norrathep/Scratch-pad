@@ -41,11 +41,13 @@ from .core import IMG, ROOT, Frame, eot_transform, letterbox, xywh2xyxy
 
 Y5 = os.path.join(ROOT, "third_party", "yolov5")
 sys.path.insert(0, Y5)
-OBJ = os.environ.get("CAP_OBJ", "hide")          # "hide" (IC-style) or "flood" (hide player + dense phantoms)
+OBJ = os.environ.get("CAP_OBJ", "hide")  # "hide" (IC-style) | "flood" (hide player + phantoms) | "dilemma" (flood + GC)
 OUT = os.path.join(ROOT, "out", "capacity" if OBJ == "hide" else f"capacity_{OBJ}")
 W = os.path.join(ROOT, "weights")
 EPS, K_TEST = 8 / 255, 2
-STEPS = 40 if OBJ == "flood" else 30   # flood needs more steps to grow phantoms and hide the player
+STEPS = 30 if OBJ == "hide" else 40     # flood needs more steps to grow phantoms and hide the player
+FLOOD_OUT = os.path.join(ROOT, "out", "capacity_flood")
+GAMMA = float(os.environ.get("CAP_GAMMA", "300"))  # weight of the gradient-conflict term (dilemma only)
 EPOCHS = 5
 GAIN = 0.4               # RootKit AI-Aimbot default aaMovementAmp (AimTrap App. I)
 torch.set_num_threads(4)
@@ -72,9 +74,9 @@ def load_frames():
 
 
 # ----------------------------------------------------------------- models
-def load5(path):
+def load5(path, fuse=True):
     from models.experimental import attempt_load
-    m = attempt_load(path, device="cpu", fuse=True).float().eval()
+    m = attempt_load(path, device="cpu", fuse=fuse).float().eval()
     for q in m.parameters():
         q.requires_grad_(False)
     return m
@@ -161,11 +163,26 @@ def cloak_loss(box, s, masks):
     return total / len(s)
 
 
-def craft_hide(models, x, seed, persons=None, bs=16):
+def grad_cos5(m, xa, masks):
+    """cos( d l_pos / d theta , d l_neg / d theta ) over all weights of m (double backprop).
+    l_pos: attacker's loss for detecting the real player; l_neg: attacker's loss for scoring phantoms as background.
+    cos -> -1 means any weight update that lowers one raises the other (to first order)."""
+    params = [q for q in m.parameters() if q.requires_grad]
+    _, s = person_conf(m, xa)
+    s = s.clamp(1e-6, 1 - 1e-6)
+    lp = torch.stack([-torch.log(s[b][pl]).mean() for b, (ph, pl) in enumerate(masks) if pl.any()]).mean()
+    ln = torch.stack([-torch.log(1 - s[b][ph]).mean() for b, (ph, pl) in enumerate(masks) if ph.any()]).mean()
+    gp = torch.cat([g.flatten() for g in torch.autograd.grad(lp, params, create_graph=True)])
+    gn = torch.cat([g.flatten() for g in torch.autograd.grad(ln, params, create_graph=True)])
+    return torch.nn.functional.cosine_similarity(gp, gn, 0)
+
+
+def craft_hide(models, x, seed, persons=None, bs=16, gc_models=None, log=None):
     out = []
+    rng = np.random.default_rng(seed)
     for i in range(0, len(x), bs):
         xb = x[i:i + bs]
-        masks = [phantom_mask5(p) for p in persons[i:i + bs]] if OBJ == "flood" else None
+        masks = [phantom_mask5(p) for p in persons[i:i + bs]] if OBJ != "hide" else None
         g = torch.Generator().manual_seed(seed + i)
         d = (torch.rand(xb.shape, generator=g) * 2 - 1) * EPS
         a = 2.5 * EPS / STEPS
@@ -176,11 +193,21 @@ def craft_hide(models, x, seed, persons=None, bs=16):
             for m in models:
                 box, s = person_conf(m, eot_transform(xa))
                 loss = loss + cloak_loss(box, s, masks)
+            if gc_models:  # one random checkpoint of the simulated retraining trajectory per step (unbiased)
+                cos = grad_cos5(gc_models[rng.integers(len(gc_models))], xa, masks)
+                loss = loss + GAMMA * cos
             gr, = torch.autograd.grad(loss, d)
             d = (d.detach() - a * gr.sign()).clamp(-EPS, EPS)
             d = (xb + d).clamp(0, 1) - xb
         out.append(((xb + d).clamp(0, 1) * 255).round().to(torch.uint8))
-        print(f"    {i + len(xb)}/{len(x)}", flush=True)
+        msg = f"    {i + len(xb)}/{len(x)}"
+        if gc_models:
+            xq = out[-1].float() / 255
+            c = [float(grad_cos5(m, xq, masks).detach()) for m in gc_models]
+            msg += " cos per checkpoint " + " ".join(f"{v:+.2f}" for v in c)
+            if log is not None:
+                log.append(c)
+        print(msg, flush=True)
     return torch.cat(out)
 
 
@@ -192,7 +219,17 @@ def stage_craft(rnd):
     sp, _ = load_frames()
     os.makedirs(os.path.join(OUT, "banks"), exist_ok=True)
     proxies = [load5(os.path.join(W, f"yolov5{s}.pt")) for s in "ns"]
-    if rnd == 2:
+    gc_models = None
+    if rnd == 2 and OBJ == "dilemma":
+        # identical proxies to the flood round 2 (ablation: only the gradient-conflict term differs)
+        proxies += [load5(os.path.join(FLOOD_OUT, "train", f"r1_defender_{s}", "weights", "last.pt")) for s in "ns"]
+        traj = os.path.join(OUT, "train", "traj_defender_n", "weights")
+        gc_models = [load5(os.path.join(W, "yolov5n.pt"), fuse=False)] + \
+                    [load5(os.path.join(traj, f"epoch{e}.pt"), fuse=False) for e in (0, 2, 4)]
+        for m in gc_models:
+            for q in m.parameters():
+                q.requires_grad_(True)
+    elif rnd == 2:
         proxies += [load5(model_file("defender", s, 1)) for s in "ns"]
     todo = [("T", K_TEST), ("B", 1)] + ([("A", 1)] if rnd == 1 else [])
     for split, K in todo:
@@ -202,9 +239,13 @@ def stage_craft(rnd):
         t = time.time()
         print(f"[craft r{rnd}] {split} with {len(proxies)} proxies", flush=True)
         x = torch.stack([f.x for f in sp[split]])
+        cos_log = []
         bank = torch.stack([craft_hide(proxies, x, seed=1000 * rnd + 100 * k + (split == "T"),
-                                         persons=[f.persons for f in sp[split]]) for k in range(K)], 1)
+                                         persons=[f.persons for f in sp[split]], gc_models=gc_models, log=cos_log)
+                            for k in range(K)], 1)
         torch.save({f.name: bank[i] for i, f in enumerate(sp[split])}, p)
+        if cos_log:
+            json.dump(cos_log, open(os.path.join(OUT, f"gc_cos_r{rnd}_{split}.json"), "w"))
         print(f"  done in {time.time() - t:.0f}s", flush=True)
 
 
