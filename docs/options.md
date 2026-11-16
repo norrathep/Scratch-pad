@@ -208,6 +208,37 @@ Time budget (CPU latencies; a step costs max(latency, 1000/144 ms)): P(hit ≤ 1
 * Add the phantom-flood term, so a retrained small model must also reject dozens of confident phantoms.
 * Extend to l/x and measure GPU latency under game load.
 
+### 5.8 Adding phantoms to the capacity dilemma (`CAP_OBJ=flood python -m aimbot_defense.capacity ...`)
+**Objective.** The same pipeline as §5.7, but the cloak suppresses the real player (weight ×4) **and** grows confident 14×28 px phantoms. They sit on stride-8 anchor 1 (16×30), every 3rd cell, at least 12 px from any player. Hinge terms stop pushing anchors that are already confident or suppressed; 40 PGD steps with EOT.
+
+The first version suppressed every non-phantom anchor and failed on YOLOv5: phantom confidence reached only ≈ 0.10, because neighbouring anchors share features and YOLOv5's score is obj × cls. Suppressing only the player's anchors fixed it.
+
+Metric: hit within 10 steps; "≤150 ms" uses CPU latency per step (n 17, s 35, m 70 ms).
+
+| attacker | frames | hide | hide ≤150 ms | flood | flood ≤150 ms | boxes/frame (flood) | false locks (flood) |
+|---|---|---|---|---|---|---|---|
+| v5n | clean | 0.83 | 0.83 | 0.83 | 0.83 | 1.5 | 2.6 |
+| v5n | r1 / r2 | 0.00 / 0.00 | 0.00 | 0.03 / 0.03 | 0.03 | **32 / 22** | **43 / 39** |
+| v5s | r1 / r2 | 0.00 / 0.00 | 0.00 | 0.04 / 0.04 | 0.04 | **52 / 38** | **46 / 44** |
+| v5m (not a proxy) | r1 / r2 | 0.71 / 0.70 | 0.39 / 0.40 | 0.75 / 0.72 | 0.44 | 3.0 | 7–8 |
+| v5n retrained | r1 | 0.55 | 0.53 | 0.56 | 0.55 | 0.7 | 1.6 |
+| v5s retrained | r1 | 0.68 | 0.60 | 0.71 | 0.66 | 1.1 | 3.3 |
+| v5m retrained | r1 | 0.85 | 0.50 | 0.85 | 0.49 | 1.5 | 4.6 |
+| v5n retrained | r2 (clean: hide 0.83, flood 0.74) | **0.38** | 0.37 | 0.47 | 0.46 | 0.6 | 2.6 |
+| v5s retrained | r2 (clean: 0.88 / 0.84) | 0.65 | 0.57 | 0.62 | 0.57 | 1.2 | 6.0 |
+| v5m retrained | r2 (clean: 0.82 / 0.85) | 0.78 | 0.46 | 0.79 | 0.46 | 1.5 | 3.8 |
+
+**Reading.**
+1. **Against cheats that don't adapt, phantoms are a big win for detection, not for prevention.** n and s are blinded about as well as by hide (0.03–0.04 against 0.00). They also lock onto empty space **38–46 times per engagement** (≈ 3 on clean frames), which is unambiguous evidence of cheating, as in AimTrap's honeypots. Most real cheaters run stock models, so this matters in practice.
+2. **Retraining wipes the phantoms out completely, in both rounds.** After retraining, the model sees 0.6–1.5 boxes per frame, at or *below* clean levels. The retrained models end up at the same hit rates as against hide alone (within ±0.1). Round 2 did not help the phantoms survive.
+3. **Why: phantoms are dense, free negative labels for the attacker.** Every harvested frame carries dozens of confident "person" regions that the attacker's true labels mark as background. That is the strongest and easiest supervision signal in the whole retraining set. Hide, by contrast, forces the attacker to *recover* positives under the perturbation. Phantoms on background are therefore the easiest part of a cloak for an adaptive attacker to undo. This matches the YOLOv8 pilot (§5.5) and the failed first-order dilemma loss (§5.6).
+4. **The size ordering is unchanged** (n < s < m after retraining), and so is the weak point (retrained s ≈ 0.62–0.65). Phantoms do not add a capacity lever.
+
+**What could make phantoms survive retraining (untested ideas).**
+* **Remove the free negatives.** Phantoms that the attacker cannot label as background without also labelling real players: for example, phantoms *attached to* players (extra heads or limbs that shift the aim point), so "suppress the phantom" and "detect the player" share the same pixels.
+* **Make the negatives perishable.** Phantom layouts that change per session or patch, rotated faster than the attacker can harvest and retrain. This still gives free negatives each time, but costs a retraining cycle per rotation.
+* **Use phantoms purely as a detector of stock cheats, and keep hide for prevention.** That is AimTrap's split, here in screen space.
+
 ## 6. Recommended next steps
 1. **Move to real game frames and proxy ensembles** (CS2 / CF captures, or an open-source shooter with engine ground truth). Keep EOT on by default.
 2. **Redesign the slowdown objective to be temporally correlated** (O8). Options: (a) per-engagement consistent aim bias, so the aimbot converges confidently onto a point just off the hitbox; (b) a decoy closer to the crosshair than the real player, kept stable for several frames and then moved, so the controller keeps re-acquiring; (c) offsets matched to the smoothing gain to cause overshoot. Measure the time-to-hit *distribution*, plus false locks as evidence.
