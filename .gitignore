@@ -8,3 +8,4 @@ out/*.pt
 __pycache__/
 *.pyc
 out/pipeline.log
+out/*.log

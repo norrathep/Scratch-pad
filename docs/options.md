@@ -120,6 +120,22 @@ Transfer to an unseen YOLOv8s: **every** defence scores 0.81–0.94, i.e. no pro
 5. **One round of iterated best response (O3 "+r2") helped the plain IC objective under AT** (0.68 → 0.52) but did nothing for the others. It is cheap and worth scaling up, but the evidence is weak.
 6. **Confounds:** the AT runs used very little data (16 scenes), which also degraded clean performance (0.48–0.81 against 0.86). Compare each AT row with its own clean column. COCO is not game footage. Small n.
 
+### 5.5 Phantom flood against box capping (`flood.py`)
+Question: if the cheater caps candidate boxes to defeat a sponge cloak, do they lose the player? The flood cloak puts confident 14×28 px phantoms on a lattice of stride-8 anchors outside the player (ε = 8/255, white-box YOLOv8n). The cap keeps the top-k boxes by score before NMS, the same order ultralytics uses.
+
+| cap k | 1 | 3 | 10 | 30 | 100 | 300 | none |
+|---|---|---|---|---|---|---|---|
+| player detected (clean = 0.81–0.88) | 0.25 | 0.31 | 0.38 | 0.50 | 0.75 | 0.88 | 0.88 |
+| hit@15 (clean = 0.83–0.86) | 0.41 | 0.43 | 0.33 | 0.22 | 0.17 | 0.15 | 0.14 |
+| false locks / engagement | 33 | 32 | 38 | 44 | 48 | 49 | 50 |
+
+* **Yes, capping costs the player.** With k ≤ 10, the player survives the cap in only 25–38 % of frames.
+* **But the runtime lever is negligible.** On CPU, NMS over the ~340 candidates takes **0.3 ms against ~95 ms for the forward pass**. Hundreds of boxes do not slow a desktop aimbot. Overload-style slowdowns need tens of thousands of boxes on weak hardware.
+* **What actually slows the aimbot is target selection.** Even uncapped, with the player still detected, hit@15 falls from 0.86 to **0.14**, because there is almost always a phantom closer to the crosshair. Dense phantoms work far better than one decoy (0.51). This is the useful form of "slow it down".
+* **Adaptive attacks:**
+  * *Retraining on flood frames largely removes it.* Candidates fall from 341 to 10, and hit@15 is 0.56 against 0.69 for the same retrained model on clean frames.
+  * *It does not transfer to YOLOv8s* (0.88–0.91).
+
 ## 6. Recommended next steps
 1. **Move to real game frames and proxy ensembles** (CS2 / CF captures, or an open-source shooter with engine ground truth). Keep EOT on by default.
 2. **Redesign the slowdown objective to be temporally correlated** (O8). Options: (a) per-engagement consistent aim bias, so the aimbot converges confidently onto a point just off the hitbox; (b) a decoy closer to the crosshair than the real player, kept stable for several frames and then moved, so the controller keeps re-acquiring; (c) offsets matched to the smoothing gain to cause overshoot. Measure the time-to-hit *distribution*, plus false locks as evidence.
