@@ -169,6 +169,45 @@ Note: measured on the last 1×1 class layer only, this cosine is saturated even 
 2. *The conflict must hold along the attacker's whole training trajectory, not just at θ0.* Next step: enforce the cosine term (or the unrolled post-fine-tuning objective S = recall × (1 − phantom survival)) at a **population of checkpoints**: θ0, the defender's own simulated-AT checkpoints after 1, 3 and 12 epochs, and earlier rounds' AT models (PSRO-style). Then iterate.
 3. *Move "runtime" from NMS to model capacity.* NMS cost is negligible (§5.5), so the realistic cost axis is the capacity, and therefore the inference latency, needed to separate phantoms from players. The testable version of the dilemma: the attacker can retrain a small fast model (n/s) to get detection and no phantoms only with a model large enough to push its latency past the human-reaction budget. Measure the post-AT hit@15 against model size (v8n → s → m → l) and the latency at each size.
 
+### 5.7 Capacity dilemma: model size as the attacker's cost (`capacity.py`)
+**Setup (matches IC/AimTrap).**
+* Detectors: original anchor-based YOLOv5 n/s/m (v7.0 weights), 320×320, conf 0.4, controller gain 0.4 (the RootKit AI-Aimbot defaults).
+* Data: 400 COCO val2017 person images. A = 120 (defender), B = 160 (attacker harvest), T = 80 (test). The attacker adds 80 person-free images when retraining.
+* Cloak: hide + EOT, ε = 8/255.
+* Training: 5 epochs, AdamW, true labels, clean copies included.
+* Cost: aiming steps to a hit × per-frame latency. Latency was measured on this 4-core CPU at batch 1: n ≈ 14–18 ms, s ≈ 33–36 ms, m ≈ 66–71 ms.
+
+**The loss encodes the dilemma.** It defeats every model fast enough to be worth using, including retrained versions; YOLOv5m is deliberately excluded.
+* Round 1: proxies = {v5n, v5s}.
+* Round 2: proxies = {v5n, v5s, defender-retrained v5n, defender-retrained v5s}. The defender's models are trained on its own split A.
+
+Metric: hit within 10 aiming steps.
+
+| attacker | clean | round-1 cloak | round-2 cloak |
+|---|---|---|---|
+| v5n (off the shelf) | 0.83 | 0.00 | 0.00 |
+| v5s (off the shelf) | 0.87 | 0.00 | 0.00 |
+| v5m (off the shelf, not a proxy) | 0.92 | 0.71 | 0.70 |
+| v5n retrained on harvested frames of that round | 0.78 / 0.83 | 0.55 | **0.38** |
+| v5s retrained | 0.87 / 0.88 | 0.68 | **0.65** |
+| v5m retrained | 0.90 / 0.82 | 0.85 | **0.78** |
+
+(The "clean" column for retrained rows lists the round-1 / round-2 model.)
+
+Time budget (CPU latencies; a step costs max(latency, 1000/144 ms)): P(hit ≤ 150 ms) under the round-2 cloak is 0.37 for n, 0.57 for s and 0.46 for m. Clean n and s give 0.83–0.84.
+
+**Reading.**
+1. **The size ordering holds.** After retraining against the round-2 cloak, recovery grows with capacity: n 0.38 < s 0.65 < m 0.78. Protection left (clean − cloaked): n 0.45, s 0.23, m 0.04. Only the large model fully sees through.
+2. **The dilemma term works where it is applied hardest.** Adding the defender's own retrained n to the loss cut the attacker's retrained n from 0.55 to 0.38. It transfers across independent retraining runs on disjoint data.
+3. **The weak point is v5s.** It is in the loss, but after retraining it recovers to 0.65 against 0.88 clean. A 2× latency step (n → s) buys the attacker most of the way back. On this CPU, the best attacker under a 150 ms budget is retrained s (0.57) rather than m (0.46), against 0.84 without the cloak. That is a real reduction, but not "the cheater must go slow".
+4. **Hardware decides whether the latency tax bites.** On a gaming GPU, n/s/m all run in a few ms, so m's cost is negligible there. The dilemma only bites on CPU/laptop hardware, a GPU shared with the game, or if the escape model has to be far bigger (l/x, ensembles, purifiers). The next step is to measure on the target hardware.
+5. **Caveats:** a single seed, small data (160 harvested frames), 5 epochs, COCO rather than game frames, and one round of iteration.
+
+**Next:**
+* Make the loss harder for v5s: a population of retrained checkpoints (several seeds and epochs) and more rounds.
+* Add the phantom-flood term, so a retrained small model must also reject dozens of confident phantoms.
+* Extend to l/x and measure GPU latency under game load.
+
 ## 6. Recommended next steps
 1. **Move to real game frames and proxy ensembles** (CS2 / CF captures, or an open-source shooter with engine ground truth). Keep EOT on by default.
 2. **Redesign the slowdown objective to be temporally correlated** (O8). Options: (a) per-engagement consistent aim bias, so the aimbot converges confidently onto a point just off the hitbox; (b) a decoy closer to the crosshair than the real player, kept stable for several frames and then moved, so the controller keeps re-acquiring; (c) offsets matched to the smoothing gain to cause overshoot. Measure the time-to-hit *distribution*, plus false locks as evidence.
