@@ -13,3 +13,6 @@ third_party/
 out/capacity/banks/
 out/capacity/ds/
 out/capacity/train/
+out/capacity_flood/banks/
+out/capacity_flood/ds/
+out/capacity_flood/train/

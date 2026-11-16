@@ -41,9 +41,11 @@ from .core import IMG, ROOT, Frame, eot_transform, letterbox, xywh2xyxy
 
 Y5 = os.path.join(ROOT, "third_party", "yolov5")
 sys.path.insert(0, Y5)
-OUT = os.path.join(ROOT, "out", "capacity")
+OBJ = os.environ.get("CAP_OBJ", "hide")          # "hide" (IC-style) or "flood" (hide player + dense phantoms)
+OUT = os.path.join(ROOT, "out", "capacity" if OBJ == "hide" else f"capacity_{OBJ}")
 W = os.path.join(ROOT, "weights")
-EPS, STEPS, K_TEST = 8 / 255, 30, 2
+EPS, K_TEST = 8 / 255, 2
+STEPS = 40 if OBJ == "flood" else 30   # flood needs more steps to grow phantoms and hide the player
 EPOCHS = 5
 GAIN = 0.4               # RootKit AI-Aimbot default aaMovementAmp (AimTrap App. I)
 torch.set_num_threads(4)
@@ -112,10 +114,58 @@ def latency_ms(m, reps=20):
 
 
 # ------------------------------------------------------------------ craft
-def craft_hide(models, x, seed, bs=16):
+def _v5_centres():
+    out = []
+    for st in (8, 16, 32):
+        n = IMG // st
+        gy, gx = torch.meshgrid(torch.arange(n), torch.arange(n), indexing="ij")
+        c = torch.stack([(gx + 0.5) * st, (gy + 0.5) * st], -1).reshape(-1, 2).float()
+        out.append(c.repeat(3, 1))               # 3 anchors per cell, order (anchor, gy, gx)
+    return torch.cat(out)                         # [6300, 2]
+
+
+V5C = _v5_centres()
+PH_EVERY = 3
+PL_W = 4.0                          # weight on suppressing the real player relative to growing phantoms
+
+
+def phantom_mask5(persons):
+    """Phantom anchors: stride-8 level, anchor 1 (16x30, person-shaped), every PH_EVERY-th cell, >= 12 px from
+    every player. Player anchors (all levels): centre inside a player box (+4 px) -> suppressed."""
+    n = IMG // 8
+    gy, gx = torch.meshgrid(torch.arange(n), torch.arange(n), indexing="ij")
+    keep = ((gy % PH_EVERY == 1) & (gx % PH_EVERY == 1)).flatten()
+    ph = torch.zeros(6300, dtype=torch.bool)
+    ph[n * n: 2 * n * n] = keep
+    pl = torch.zeros(6300, dtype=torch.bool)
+    for x1, y1, x2, y2 in persons:
+        near = (V5C[:, 0] > x1 - 12) & (V5C[:, 0] < x2 + 12) & (V5C[:, 1] > y1 - 12) & (V5C[:, 1] < y2 + 12)
+        ph &= ~near
+        pl |= (V5C[:, 0] > x1 - 4) & (V5C[:, 0] < x2 + 4) & (V5C[:, 1] > y1 - 4) & (V5C[:, 1] < y2 + 4)
+    return ph, pl
+
+
+PH_WH = torch.tensor([14.0, 28.0])  # spaced 24 px apart and 14 px wide: phantoms never merge in NMS
+
+
+def cloak_loss(box, s, masks):
+    s = s.clamp(1e-6, 1 - 1e-6)
+    if OBJ == "hide":
+        return -torch.log(1 - s).sum() / len(s)
+    total = 0.0
+    for b, (ph, pl) in enumerate(masks):
+        sp_, sl = s[b][ph], s[b][pl]
+        # hinges: stop pushing phantoms once confident, and player anchors once well below threshold
+        total = total - (torch.log(sp_) * (sp_ < 0.8)).sum() - PL_W * (torch.log(1 - sl) * (sl > 0.05)).sum() \
+            + ((box[b][ph][:, 2:] - PH_WH).abs() / PH_WH).sum() + ((box[b][ph][:, :2] - V5C[ph]).abs() / 8).sum()
+    return total / len(s)
+
+
+def craft_hide(models, x, seed, persons=None, bs=16):
     out = []
     for i in range(0, len(x), bs):
         xb = x[i:i + bs]
+        masks = [phantom_mask5(p) for p in persons[i:i + bs]] if OBJ == "flood" else None
         g = torch.Generator().manual_seed(seed + i)
         d = (torch.rand(xb.shape, generator=g) * 2 - 1) * EPS
         a = 2.5 * EPS / STEPS
@@ -124,8 +174,8 @@ def craft_hide(models, x, seed, bs=16):
             xa = (xb + d).clamp(0, 1)
             loss = 0.0
             for m in models:
-                _, s = person_conf(m, eot_transform(xa))
-                loss = loss - torch.log(1 - s.clamp(max=1 - 1e-6)).sum() / len(xb)
+                box, s = person_conf(m, eot_transform(xa))
+                loss = loss + cloak_loss(box, s, masks)
             gr, = torch.autograd.grad(loss, d)
             d = (d.detach() - a * gr.sign()).clamp(-EPS, EPS)
             d = (xb + d).clamp(0, 1) - xb
@@ -152,7 +202,8 @@ def stage_craft(rnd):
         t = time.time()
         print(f"[craft r{rnd}] {split} with {len(proxies)} proxies", flush=True)
         x = torch.stack([f.x for f in sp[split]])
-        bank = torch.stack([craft_hide(proxies, x, seed=1000 * rnd + 100 * k + (split == "T")) for k in range(K)], 1)
+        bank = torch.stack([craft_hide(proxies, x, seed=1000 * rnd + 100 * k + (split == "T"),
+                                         persons=[f.persons for f in sp[split]]) for k in range(K)], 1)
         torch.save({f.name: bank[i] for i, f in enumerate(sp[split])}, p)
         print(f"  done in {time.time() - t:.0f}s", flush=True)
 
@@ -228,7 +279,8 @@ def stage_eval():
                 ttks += r.pop("ttks")
                 per.append(r)
             ttks = np.asarray(ttks)
-            row = dict(attacker=an, frames=bn, latency_ms=lat, det=float(np.mean([r["det"] for r in per])),
+            n_dets = float(np.mean([(d[:, 4] > 0.4).sum() for d in dets]))  # boxes the aimbot sees per frame
+            row = dict(attacker=an, frames=bn, latency_ms=lat, n_dets=n_dets, det=float(np.mean([r["det"] for r in per])),
                        fake=float(np.mean([r["fake"] for r in per])), steps_median=float(np.median(ttks)),
                        hit_steps10=float((ttks <= 10).mean()), hit_steps60=float((ttks <= 60).mean()), ttks=ttks.tolist())
             rows.append(row)
