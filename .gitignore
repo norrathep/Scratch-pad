@@ -10,3 +10,6 @@ __pycache__/
 out/pipeline.log
 out/*.log
 third_party/
+out/capacity/banks/
+out/capacity/ds/
+out/capacity/train/
