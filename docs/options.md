@@ -84,7 +84,47 @@ The defender knows the crosshair is at the screen centre, so it can place decoys
 
 **Adaptive attacks:** preprocessing (Gaussian σ = 8/255, JPEG-75, 0.5× down-up, blur σ = 1), threshold lowering (0.4 → 0.15), adversarial fine-tuning, and universal-cloak subtraction (§5.3).
 
-RESULTS_PLACEHOLDER
+
+All numbers are closed-loop **hit@15**: the fraction of engagements where the aimbot reaches a real hitbox within 250 ms. Lower is better for the defender. The test set is 16 scenes × 12 starts. Raw data: `out/results.json`, `out/universal_results.json`.
+
+### 5.1 White-box attacker (YOLOv8n): purification and threshold lowering (thr = 0.4 unless noted)
+
+| defence | no preproc | thr 0.15 | Gauss σ=8/255 | JPEG-75 | down-up 0.5× | blur σ=1 |
+|---|---|---|---|---|---|---|
+| none | 0.86 | 0.92 | 0.86 | 0.86 | 0.81 | 0.87 |
+| `ic_hide` (IC objective, no EOT) | **0.09** | 0.10 | 0.16 | 0.37 | **0.62** | **0.56** |
+| `hide_eot` | **0.00** | 0.06 | 0.06 | 0.06 | **0.06** | **0.06** |
+| `decoy_eot` | 0.51 | 0.55 | 0.67 | 0.77 | 0.60 | 0.56 |
+| `drift_eot` | 0.85 | 0.81 | 0.88 | 0.92 | 0.86 | 0.87 |
+
+### 5.2 Adversarially fine-tuned attacker, YOLOv8n-AT trained on harvested frames of the *same* defence (thr = 0.4)
+
+| defence | AT model on clean frames | round-1 cloak | round-2 cloak (+r2, O3) |
+|---|---|---|---|
+| `ic_hide` | 0.77 | 0.68 | 0.52 |
+| `hide_eot` | 0.81 | 0.50 | 0.50 |
+| `decoy_eot` | 0.64 | 0.67 | 0.74 |
+| `drift_eot` | 0.48 | 0.62 | 0.79 |
+
+Transfer to an unseen YOLOv8s: **every** defence scores 0.81–0.94, i.e. no protection.
+
+### 5.3 Universal-cloak estimation and subtraction (§2 W4)
+* From 112 harvested protected frames, the high-pass residual average recovers the universal cloak with **cosine 0.96** to its true high-frequency component. With IC-style 5-step refinement on top, it is still **0.92**. No clean frames are needed.
+* At this toy scale the universal cloak itself did not generalise: hit@15 is 0.86, the same as clean. The refined cloak (white-box) gave 0.06, and subtracting the estimate raised it to 0.19 (0.25 at thr 0.15). A universal cloak trained on large data, as IC's is, would carry more of the effect and so lose more to subtraction. This needs testing at scale.
+
+### 5.4 What the pilot says (16 test scenes, so read as a direction, not a result)
+1. **IC-style cloaks without EOT are fragile to free purification**, which IC did not test. A 0.5× down-up resize takes hit@15 from 0.09 to 0.62, and a σ = 1 blur takes it to 0.56. Crafting with EOT removes this at the same ε: 0.06 across all purifiers. Any follow-up should use EOT as the baseline, not IC as published.
+2. **Adversarial fine-tuning largely undoes the plain IC objective.** The AT model scores 0.68 under the cloak against 0.77 on clean frames. The EOT version keeps more protection (0.50 against 0.81). This is the trend IC's own Table 10 hints at.
+3. **Naive per-frame misdirection did *not* beat hide, and AT neutralises it** (decoy 0.67 against 0.64 clean). The key lesson is that **zero-mean, per-frame random offsets are averaged out by the aimbot's own mouse smoothing**: drift fails even white-box (0.85). For a "slowdown" defence, the misdirection has to be **temporally correlated**: a consistent bias per engagement, or a decoy placed to win target selection (O8). Independent per-frame noise does not work.
+4. **Single-proxy cloaks do not transfer** to YOLOv8s at all. Proxy ensembles (as in IC) are mandatory, and every comparison here is white-box or near-white-box.
+5. **One round of iterated best response (O3 "+r2") helped the plain IC objective under AT** (0.68 → 0.52) but did nothing for the others. It is cheap and worth scaling up, but the evidence is weak.
+6. **Confounds:** the AT runs used very little data (16 scenes), which also degraded clean performance (0.48–0.81 against 0.86). Compare each AT row with its own clean column. COCO is not game footage. Small n.
+
+## 6. Recommended next steps
+1. **Move to real game frames and proxy ensembles** (CS2 / CF captures, or an open-source shooter with engine ground truth). Keep EOT on by default.
+2. **Redesign the slowdown objective to be temporally correlated** (O8). Options: (a) per-engagement consistent aim bias, so the aimbot converges confidently onto a point just off the hitbox; (b) a decoy closer to the crosshair than the real player, kept stable for several frames and then moved, so the controller keeps re-acquiring; (c) offsets matched to the smoothing gain to cause overshoot. Measure the time-to-hit *distribution*, plus false locks as evidence.
+3. **Make the adaptive loop the core of the method** (O3 + O4). Iterate defender-AT and attacker-AT rounds (PSRO-style population), and measure the **cross-family transfer matrix** for rotating perturbation families. The paper's claim would then be about attacker *cost* (frames and retraining time to regain hit@15 below human level) against rotation period, rather than "unbreakable".
+4. **Add the missing adaptive attacks** from §7: temporal filtering (n-frame confirmation; this measures the latency tax directly), universal-cloak subtraction at scale, architecture swap, and diffusion/upscaler purification.
 
 ## 7. Suggested evaluation protocol for the real study
 
