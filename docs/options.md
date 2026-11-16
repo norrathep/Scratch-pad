@@ -15,6 +15,20 @@ Working notes. Scope: proactive, perturbation-based defences against visual (scr
 
 AimTrap does the "inducive" part with 3D adversarial textures: camouflage textures on players plus honeypot textures in the map. It makes the **threshold-dilemma** argument: lowering the threshold to recover cloaked players also triggers more honeypot locks. Its adaptive-attack section is qualitative. It has no adversarial-training experiment.
 
+### 1.1 What IC and AimTrap evaluate on
+
+| | Invisibility Cloak (USENIX Sec '24) | AimTrap (CCS '26) |
+|---|---|---|
+| Aimbot | RootKit-Org *AI-Aimbot* (open source, YOLOv5-based) | the same RootKit AI-Aimbot, defaults: 640×640 aim window, conf 0.4, `aaMovementAmp` = 0.4 (a proportional controller moving 40 % of the offset per step), headshot mode |
+| Cheating models | YOLOv5 n/s/m/l/x and n6–x6, NanoDet-Plus-m (anchor-free); transfer tests on YOLOv3n, YOLOv8n, Faster R-CNN, RTMDet | proxy YOLOv5n, main attacker **YOLOv5s**; transfer to YOLOv5 n/s/m/l, YOLOv8n, Faster R-CNN, NanoDet |
+| Proxies | YOLOv5n / NanoDet (refinement); ensembles of YOLOv5 models (universal cloak) | YOLOv5n, or an ensemble of YOLOv5n+s with MI+TI |
+| Data | ACVC-CS2 (14,820 frames, 9 maps) and ACVC-CF (57,330 frames, 7 maps): real match footage cropped to **320×320** | a custom CS2 map (Hammer editor) with 16 honeypot textures and 4 generated player models; real-game runs on CS2 |
+| Metric | per-frame Defence Success Rate (no box ≥ 0.4), FPS, #queries, SSIM, user study (122 people) | per-frame decoy / evasion success, uniqueness, trajectory-classifier detection accuracy |
+| Hardware | Xeon 5418Y + RTX 4090 | i7-13700K + RTX 4090 / 5090 |
+| Adaptive | random noise; fine-tune + AT YOLOv5n on 20 % of the data | threshold argument; qualitative discussion of retraining |
+
+Our capacity experiment (§5.7) therefore uses the original anchor-based YOLOv5 n/s/m (ultralytics v7.0 weights), 320×320 frames, conf 0.4 and a controller gain of 0.4.
+
 ## 2. Where IC is weak
 
 | # | Weakness | Why it matters |

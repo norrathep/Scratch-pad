@@ -9,3 +9,4 @@ __pycache__/
 *.pyc
 out/pipeline.log
 out/*.log
+third_party/

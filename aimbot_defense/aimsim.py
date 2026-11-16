@@ -40,7 +40,7 @@ def hit_region(p):
     return cx - w / 4, cy - h / 4, cx + w / 4, cy + h / 4
 
 
-def simulate(bank, persons, thr=0.4, starts=12, T=60, gain=0.5, lock_tol=3.0, seed=0):
+def simulate(bank, persons, thr=0.4, starts=12, T=60, gain=0.5, lock_tol=3.0, seed=0, return_ttks=False):
     """bank: list (len K) of [D,5] detections (xyxy, conf) for one scene."""
     rng = random.Random(seed)
     regions = [hit_region(p) for p in persons]
@@ -71,8 +71,11 @@ def simulate(bank, persons, thr=0.4, starts=12, T=60, gain=0.5, lock_tol=3.0, se
         ttks.append(ttk)
         fakes.append(fake)
     ttks = np.asarray(ttks)
-    return dict(hit15=float((ttks <= 15).mean()), hit60=float((ttks <= T).mean()),
-                ttk=float(np.median(ttks)), fake=float(np.mean(fakes)), det=float(np.mean(det_hits)))
+    r = dict(hit15=float((ttks <= 15).mean()), hit60=float((ttks <= T).mean()),
+             ttk=float(np.median(ttks)), fake=float(np.mean(fakes)), det=float(np.mean(det_hits)))
+    if return_ttks:
+        r["ttks"] = ttks.tolist()
+    return r
 
 
 def aggregate(rows):
