@@ -1,0 +1,167 @@
+[
+ {
+  "hit15": 0.22395833333333334,
+  "hit60": 0.22395833333333334,
+  "ttk": 49.75,
+  "fake": 42.52604166666667,
+  "det": 0.125,
+  "defence": "dilemma",
+  "attacker": "v8n",
+  "cap": 1,
+  "cand": 241.0625
+ },
+ {
+  "hit15": 0.265625,
+  "hit60": 0.265625,
+  "ttk": 46.21875,
+  "fake": 40.484375,
+  "det": 0.1875,
+  "defence": "dilemma",
+  "attacker": "v8n",
+  "cap": 3,
+  "cand": 241.0625
+ },
+ {
+  "hit15": 0.21354166666666666,
+  "hit60": 0.21354166666666666,
+  "ttk": 47.90625,
+  "fake": 43.80208333333333,
+  "det": 0.25,
+  "defence": "dilemma",
+  "attacker": "v8n",
+  "cap": 10,
+  "cand": 241.0625
+ },
+ {
+  "hit15": 0.14583333333333334,
+  "hit60": 0.14583333333333334,
+  "ttk": 57.25,
+  "fake": 48.05729166666667,
+  "det": 0.3125,
+  "defence": "dilemma",
+  "attacker": "v8n",
+  "cap": 30,
+  "cand": 241.0625
+ },
+ {
+  "hit15": 0.07291666666666667,
+  "hit60": 0.07291666666666667,
+  "ttk": 57.25,
+  "fake": 52.802083333333336,
+  "det": 0.5,
+  "defence": "dilemma",
+  "attacker": "v8n",
+  "cap": 100,
+  "cand": 241.0625
+ },
+ {
+  "hit15": 0.09375,
+  "hit60": 0.09375,
+  "ttk": 57.25,
+  "fake": 52.322916666666664,
+  "det": 0.75,
+  "defence": "dilemma",
+  "attacker": "v8n",
+  "cap": 300,
+  "cand": 241.0625
+ },
+ {
+  "hit15": 0.09375,
+  "hit60": 0.09375,
+  "ttk": 57.25,
+  "fake": 52.34375,
+  "det": 0.75,
+  "defence": "dilemma",
+  "attacker": "v8n",
+  "cap": "none",
+  "cand": 241.0625
+ },
+ {
+  "hit15": 0.7135416666666666,
+  "hit60": 0.7135416666666666,
+  "ttk": 18.6875,
+  "fake": 5.609375,
+  "det": 0.8125,
+  "defence": "clean",
+  "attacker": "v8n_AT[dilemma]",
+  "cap": "none",
+  "cand": 7.625
+ },
+ {
+  "hit15": 0.6875,
+  "hit60": 0.6875,
+  "ttk": 20.84375,
+  "fake": 0.026041666666666668,
+  "det": 0.6875,
+  "defence": "dilemma",
+  "attacker": "v8n_AT[dilemma]",
+  "cap": 1,
+  "cand": 6.25
+ },
+ {
+  "hit15": 0.640625,
+  "hit60": 0.640625,
+  "ttk": 20.625,
+  "fake": 2.6614583333333335,
+  "det": 0.6875,
+  "defence": "dilemma",
+  "attacker": "v8n_AT[dilemma]",
+  "cap": 3,
+  "cand": 6.25
+ },
+ {
+  "hit15": 0.6302083333333334,
+  "hit60": 0.6302083333333334,
+  "ttk": 20.5625,
+  "fake": 3.2447916666666665,
+  "det": 0.6875,
+  "defence": "dilemma",
+  "attacker": "v8n_AT[dilemma]",
+  "cap": 10,
+  "cand": 6.25
+ },
+ {
+  "hit15": 0.609375,
+  "hit60": 0.609375,
+  "ttk": 20.59375,
+  "fake": 4.473958333333334,
+  "det": 0.6875,
+  "defence": "dilemma",
+  "attacker": "v8n_AT[dilemma]",
+  "cap": 30,
+  "cand": 6.25
+ },
+ {
+  "hit15": 0.609375,
+  "hit60": 0.609375,
+  "ttk": 20.59375,
+  "fake": 4.473958333333334,
+  "det": 0.6875,
+  "defence": "dilemma",
+  "attacker": "v8n_AT[dilemma]",
+  "cap": 100,
+  "cand": 6.25
+ },
+ {
+  "hit15": 0.609375,
+  "hit60": 0.609375,
+  "ttk": 20.59375,
+  "fake": 4.473958333333334,
+  "det": 0.6875,
+  "defence": "dilemma",
+  "attacker": "v8n_AT[dilemma]",
+  "cap": 300,
+  "cand": 6.25
+ },
+ {
+  "hit15": 0.609375,
+  "hit60": 0.609375,
+  "ttk": 20.59375,
+  "fake": 4.473958333333334,
+  "det": 0.6875,
+  "defence": "dilemma",
+  "attacker": "v8n_AT[dilemma]",
+  "cap": "none",
+  "cand": 6.25
+ }
+]

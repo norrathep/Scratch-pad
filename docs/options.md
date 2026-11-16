@@ -136,6 +136,25 @@ Question: if the cheater caps candidate boxes to defeat a sponge cloak, do they 
   * *Retraining on flood frames largely removes it.* Candidates fall from 341 to 10, and hit@15 is 0.56 against 0.69 for the same retrained model on clean frames.
   * *It does not transfer to YOLOv8s* (0.88–0.91).
 
+### 5.6 Dilemma loss: can retraining be forced to choose between "detect the player" and "drop the phantoms"? (`dilemma.py`)
+**Idea.** The attacker's fine-tuning lowers l_pos (player anchors scored as person) and l_neg (phantom anchors scored as background, which also means fewer candidates, fewer false locks and less runtime) together. If ∇θ l_pos = −c·∇θ l_neg, then to first order any parameter update, with any optimiser, that improves one makes the other worse. So we add a gradient-cancellation term (as in gradient-matching poisoning, cf. Witches' Brew) to the flood cloak:
+
+  L = L_flood(δ) + γ · cos(∇θ l_pos(x+δ), ∇θ l_neg(x+δ)) → minimise, θ = all YOLOv8n parameters (double backprop).
+
+Note: measured on the last 1×1 class layer only, this cosine is saturated even on clean frames (−0.81), because it reduces to feature similarity. It has to be measured over the whole network. Whole-network cosine: −0.12 on clean frames, −0.35 to −0.40 for the plain flood, **−0.86** with the dilemma term.
+
+| | white-box v8n, no cap | v8n, cap 10 | v8n-AT (12 epochs), its own clean | v8n-AT on cloaked frames | phantom candidates after AT |
+|---|---|---|---|---|---|
+| plain flood | 0.14 | 0.33 | 0.69 | 0.56 | 341 → 10 |
+| dilemma flood | **0.09** | 0.21 | 0.71 | 0.61 | 241 → 6 |
+
+**Result: negative.** The dilemma term helps a little before retraining. Retraining still removes the phantoms (6 candidates remain) and recovers the player just as well as against the plain flood: the residual protection is 0.10 against 0.13. A first-order conflict at the attacker's starting weights θ0 does not survive 12 epochs: after a few steps the backbone learns features that separate phantoms from players.
+
+**Why, and what a real version needs.**
+1. *There is no information-theoretic dilemma.* Players and phantoms are distinguishable in the frame (a human can tell), so an unbounded attacker can always learn both. Any guarantee must be against a **bounded** attacker: a model-capacity or latency budget, N harvested frames, and the time until rotation.
+2. *The conflict must hold along the attacker's whole training trajectory, not just at θ0.* Next step: enforce the cosine term (or the unrolled post-fine-tuning objective S = recall × (1 − phantom survival)) at a **population of checkpoints**: θ0, the defender's own simulated-AT checkpoints after 1, 3 and 12 epochs, and earlier rounds' AT models (PSRO-style). Then iterate.
+3. *Move "runtime" from NMS to model capacity.* NMS cost is negligible (§5.5), so the realistic cost axis is the capacity, and therefore the inference latency, needed to separate phantoms from players. The testable version of the dilemma: the attacker can retrain a small fast model (n/s) to get detection and no phantoms only with a model large enough to push its latency past the human-reaction budget. Measure the post-AT hit@15 against model size (v8n → s → m → l) and the latency at each size.
+
 ## 6. Recommended next steps
 1. **Move to real game frames and proxy ensembles** (CS2 / CF captures, or an open-source shooter with engine ground truth). Keep EOT on by default.
 2. **Redesign the slowdown objective to be temporally correlated** (O8). Options: (a) per-engagement consistent aim bias, so the aimbot converges confidently onto a point just off the hitbox; (b) a decoy closer to the crosshair than the real player, kept stable for several frames and then moved, so the controller keeps re-acquiring; (c) offsets matched to the smoothing gain to cause overshoot. Measure the time-to-hit *distribution*, plus false locks as evidence.
