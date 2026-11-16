@@ -1,0 +1,28 @@
+[craft r1] ic_hide T
+  16/64
+  32/64
+  48/64
+  64/64
+  done in 23s
+[craft r1] ic_hide A
+  16/48
+  32/48
+  48/48
+  done in 15s
+[craft r1] ic_hide B
+  16/48
+  32/48
+  48/48
+  done in 15s
+[craft r1] hide_eot T
+  16/64
+  32/64
+  48/64
+  64/64
+  done in 75s
+[craft r1] hide_eot A
+  16/48
+  32/48
+  48/48
+  done in 58s
+[craft r1] hide_eot B
