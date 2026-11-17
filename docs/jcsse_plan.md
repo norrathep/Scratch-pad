@@ -11,10 +11,13 @@
 
 Keep "energy" out of the title. Compute cost is measured and reported, but at achievable budgets it is ≤ 1 ms (§5.10–5.13 of `options.md`), so it cannot be the headline.
 
-## Claim (revised after the IC-style baseline, `options.md` §5.14)
-Invisibility-Cloak-style hiding prevents aiming but leaves **no evidence**: the aimbot simply stops. Phantom flooding turns the aimbot's own post-processing (keep top-k by confidence, aim at the box closest to the crosshair) against it. The stock aimbot locks onto defender-placed phantoms ~40 times per engagement (≈ 10× clean), while its hit rate within 10 steps falls from ~0.87 to ~0.3. The paper characterises this **prevention vs accountability trade-off**, including a tunable per-frame mix.
+## Claim (final, as framed by the author; evidence in `options.md` §5.15)
+1. **Hiding is conspicuous.** When an Invisibility-Cloak-style cloak works, the aimbot stops detecting players altogether, so the cheater immediately sees that a defence exists and has a reason to adapt (retrain).
+2. **Hiding properly needs per-frame runtime crafting**, which costs normal players frame time: 225 ms/frame for IC-style 5-step refinement on CPU; IC reports 19–86 FPS crafting on an RTX 4090. A zero-runtime universal hide pattern is weak (hit@10 0.60–0.74, player still detected).
+3. **Phantoms are covert and slow the aimbot.** A single universal pattern, added globally at ≈ 0.1–0.2 ms/frame, keeps the real player detected at near-normal confidence (kept in 72–81 % of frames) while confident phantoms pull the aimbot away: hit@10 0.87 → 0.45–0.52. Because the aimbot still "sees" the player, the cheater has no clear signal that a defence exists, and so no reason to retrain.
+4. **Phantoms create evidence.** The aimbot locks onto empty space 25–29 times per engagement (≈ 7–10× clean), which works as a server-side honeypot signal.
 
-Do *not* claim that phantoms out-prevent IC: on the proxy models IC-style hiding reaches 0.00.
+Keep in scope: compare against universal hide **and** IC-style universal + refinement at equal ε. Do not claim that phantoms out-prevent per-frame hiding; claim they are better at **zero runtime cost** and **covert**.
 
 ## Contributions
 1. **Method:** the phantom-flood loss with a player-confidence band. Phantoms ≥ 0.95; player best box in [0.5, 0.7]; EOT; YOLOv5 n/s/m ensemble (the IC/AimTrap model family).
@@ -30,6 +33,8 @@ Do *not* claim that phantoms out-prevent IC: on the proxy models IC-style hiding
 | E4 | Perceptibility: PSNR / SSIM / LPIPS of cloaked frames, plus an example figure | to do (cheap) |
 | E5 | False-lock counts per engagement for every cloak, plus the hide/phantom per-frame mix curve | done (§5.14); switch to "locks on defender-placed phantoms" for the paper |
 | E6 | Hide + phantoms variant | done (`out/paper_floodhide`) |
+| E7 | **Universal phantoms against universal hide against IC-style universal + refinement, with runtime per frame** (core table) | done (§5.15) |
+| E8 | Covertness evidence: player detection rate/confidence against clean (have), plus a human-attribution argument (false locks resemble the aimbot's normal error mode, 2.6–4 per engagement clean) | partly done |
 
 ## Limitations to state explicitly
 * **An adaptive cheater who retrains** on harvested frames strips the phantoms (§5.8–5.9). Report it as a limitation, with the numbers.

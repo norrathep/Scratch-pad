@@ -406,6 +406,38 @@ Hit within 10 aiming steps / false locks per engagement (aimbot locked on a box 
 3. **Mixing gives a tunable curve, not a free lunch.** Evidence grows roughly linearly with the phantom-frame share, while prevention degrades quickly: 10 % phantom frames already allow 0.11–0.14 hits.
 4. **Caveat on the false-lock metric.** On clean frames, COCO persons below our 1.5 % area filter count as "false", which gives a non-zero baseline. In a game the defender knows the exact phantom positions, so locks *on defender-placed phantoms* can be counted directly. Use that metric in the paper.
 
+### 5.15 Zero-runtime universal cloaks against IC-style runtime refinement (`universal5.py`, `out/paper_universal_*`, `out/paper_ic_refine`)
+**Setup.** One pattern δ (ε = 8/255), trained offline on splits A+B (280 scenes) against YOLOv5 n/s/m with EOT and a clean pass, then added unchanged to every test frame. Applying it costs 0.1–0.2 ms per frame on CPU.
+
+The IC-faithful baseline is the universal hide pattern plus ≤ 5 refinement steps per frame against a light proxy (v5n), as in IC §4.2. That costs **225 ms per frame** on this CPU, against a 16.7 ms budget at 60 FPS. On an RTX 4090, IC itself reports crafting at 19–86 FPS and refines only some frames for this reason.
+
+Stock RootKit post-processing, 80 test scenes. Each cell is hit@10 / false locks per engagement / player kept in the output:
+
+| attacker | clean | **universal phantoms** (0 runtime) | universal hide (0 runtime) | IC-style universal + refine (225 ms/frame) | per-frame hide, 80 steps × 3 models (upper bound) |
+|---|---|---|---|---|---|
+| v5n | 0.83 / 2.6 / 0.88 | **0.45** / **28** / 0.72 | 0.60 / 0.4 / 0.61 | 0.00 / 0 / 0.00 | 0.00 |
+| v5s | 0.87 / 3.6 / 0.93 | **0.45** / **29** / 0.80 | 0.74 / 2.2 / 0.78 | 0.62 / 2.2 / 0.65 | 0.00 |
+| v5m | 0.92 / 4.0 / 0.97 | **0.52** / **25** / 0.81 | 0.60 / 2.6 / 0.64 | 0.81 / 2.3 / 0.84 | 0.00 |
+| v5l (held out) | 0.92 / 3.9 | 0.80 / 4.1 | 0.79 | 0.86 | 0.58 |
+| v8n (held out) | 0.89 / 2.4 | 0.75 / 1.5 | 0.77 | 0.59 | 0.40 |
+
+Universal phantoms under the other counters:
+* top1: 0.54 / 0.70 / 0.70 for n/s/m, with 14–22 false locks.
+* nocap: 0.39–0.41.
+* thr0.85: 0.11–0.30 (clean frames give 0.29–0.60 at that threshold).
+
+Player median confidence under universal phantoms is 0.63 / 0.75 / 0.76, against 0.76 / 0.85 / 0.88 clean.
+
+**Reading (supports the paper's claim).**
+1. **At zero runtime cost, phantoms beat hiding.** Universal phantoms roughly halve the stock aimbot's hit rate (0.87 → 0.47 on average over n/s/m). The universal hide pattern only reaches 0.60–0.74, and it does not actually hide: the player stays in the output in 61–78 % of frames.
+2. **Effective hiding needs per-frame runtime crafting.** That ranges from 225 ms per frame (IC-style, 5 steps) to far more (our 80-step upper bound). Even IC-style refinement only blinds its own proxy (v5n 0.00); it gives 0.62 / 0.81 on v5s / v5m, which is worse than universal phantoms.
+3. **Phantoms keep the defence covert.** The player remains detected (kept in 72–81 % of frames, confidence 0.63–0.76), so the aimbot looks like it works. Hiding, when it works, removes all detections, which makes the defence obvious.
+4. **Phantoms produce evidence.** 25–29 false locks per engagement against 2.6–4.0 clean (≈ 7–10×), versus ≤ 2.6 for every hiding variant.
+5. **Limits:**
+   * Transfer to held-out models is weak for every cloak.
+   * A static pattern can be estimated and subtracted once suspected (cosine 0.96 from about 100 frames, §5.3), so rotate it per session or patch.
+   * Retraining strips phantoms (§5.8), which is why covertness matters.
+
 ## 6. Recommended next steps
 1. **Move to real game frames and proxy ensembles** (CS2 / CF captures, or an open-source shooter with engine ground truth). Keep EOT on by default.
 2. **Redesign the slowdown objective to be temporally correlated** (O8). Options: (a) per-engagement consistent aim bias, so the aimbot converges confidently onto a point just off the hitbox; (b) a decoy closer to the crosshair than the real player, kept stable for several frames and then moved, so the controller keeps re-acquiring; (c) offsets matched to the smoothing gain to cause overshoot. Measure the time-to-hit *distribution*, plus false locks as evidence.
