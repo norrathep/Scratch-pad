@@ -24,3 +24,5 @@ out/sponge_band/*.pt
 out/sponge_band.log
 out/paper_*/*.pt
 out/paper_*.log
+out/paper_universal_*/delta.pt
+out/paper_universal.log
