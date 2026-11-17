@@ -20,3 +20,5 @@ out/capacity_dilemma/banks/
 out/capacity_dilemma/ds/
 out/capacity_dilemma/train/
 out/sponge5.log
+out/sponge_band/*.pt
+out/sponge_band.log
