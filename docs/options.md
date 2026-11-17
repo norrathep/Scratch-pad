@@ -293,6 +293,59 @@ Only the post-processing is input-dependent; the CNN costs the same on every fra
 * **A visible flood can add up to ~30 ms**, but the overlay then shows hundreds of boxes, and capping candidates (`max_nms` / `max_det` / top-k) removes the cost.
 * **Conclusion:** compute or energy slowdown cannot carry the "slow the aimbot" claim at this scale. It is a minor side effect at best.
 
+### 5.11 Visible sponge against the *actual* RootKit post-processing (`sponge5.py`)
+**What the RootKit source shows** (`main_onnx.py`, `main_tensorrt.py`, `config.py`):
+* YOLOv5s at 320×320; ONNX/TensorRT forward pass.
+* `non_max_suppression(pred, 0.4, 0.4, classes=0, max_det=10)`. In the ONNX build it **always runs on the CPU** (`.to('cpu')`), even with the CUDA provider. The pre-NMS input is uncapped (YOLOv5 default `max_nms` = 30 000).
+* The target is the detection closest to the screen centre; the "last target" re-sort is a no-op, so there is no tracking.
+* `visuals = False` by default (no box overlay); `cpsDisplay = True` (an aim-corrections-per-second counter).
+
+**Max-candidate sponge.** Confident half-prior-sized boxes on every stride-8 cell and all 3 anchors outside the players. White-box proxies {v5n, v5s}, no EOT, 60 steps, 32 test scenes. Reported: candidates above 0.4, NMS time (CPU, RootKit arguments), whether the player survives RootKit's own `max_det = 10`, and hit within 10 steps.
+
+| frames | attacker | candidates (mean / max) | NMS ms (mean / max) | player in top-10 | hit@10 |
+|---|---|---|---|---|---|
+| clean | v5s | 23 / 79 | 0.52 / 0.95 | 0.91 | 0.83 |
+| sponge ε = 8/255 | v5s | 107 / 318 | 0.28 / 0.49 | 0.56 | **0.31** |
+| sponge ε = 16/255 | v5s | 181 / 609 | 0.70 / 1.49 | 0.34 | **0.20** |
+| sponge + hide ε = 16/255 | v5s | 159 / 555 | 0.43 / 1.13 | 0.12 | **0.09** |
+| sponge ε = 16/255 | v5n | 18 / 51 | 0.26 | 0.62 | 0.42 |
+| sponge ε = 16/255 | v5m (not a proxy) | 21 / 80 | 0.23 | 0.91 | 0.83 |
+
+Inference for comparison: v5n 20 ms, v5s 39 ms, v5m 65 ms.
+
+**Reading.**
+* **Energy is still negligible.** Even at ε = 16/255 the sponge reached ≤ 609 candidates and ≤ 1.5 ms of NMS (thousands are needed for tens of ms, see §5.10). Whether Overload-style optimisation can reach thousands at an imperceptible budget is open.
+* **The visible flood hurts aim through RootKit's own design, without the cheater doing anything.** `max_det = 10` keeps the 10 most confident boxes, so phantoms evict the player (0.91 → 0.34 in top-10). Closest-to-crosshair targeting then steers onto phantoms: hit@10 0.83 → 0.20 on v5s *without hiding the player*, and 0.09 with hiding.
+* **Weak spots:** no transfer to the unseen v5m, and weak on v5n (the joint objective over 4 800 anchors × 2 models was under-optimised at 60 steps).
+
+## 5.12 Narrative for the visible flood ("make every fix cost something")
+
+**Claim.** Not "unbreakable" and not "stealthy", but: the visible phantom flood breaks the stock aimbot, and every cheap counter-measure trades away recall, latency, or a retraining cycle, while generating ban evidence on the way.
+
+**Arguments.**
+1. **"Visible" means visible to the model, not to people.** At ε = 8/255 humans cannot tell (IC's user study). The stock RootKit overlay is off (`visuals = False`), so the default cheater sees only symptoms: misses and a lower `cps` counter.
+2. **The stock tool defeats itself.** Its built-in `max_det = 10` and closest-to-centre targeting turn confident phantoms into lost players and wrong targets with no adaptation at all (§5.11; §5.8: 38–46 false locks per engagement against stock n/s).
+3. **Each counter-measure has a price** (the dilemma table):
+
+| counter | what it costs the cheater | evidence |
+|---|---|---|
+| do nothing | player evicted from top-10, aims at phantoms, false locks get logged | §5.11, §5.8 |
+| cap candidates (top-k by score) | phantoms out-score the player, so recall drops | v8 flood: cap ≤ 10 leaves the player in 25–38 % of frames (§5.5) |
+| raise `max_det` / no cap | player is back in the list, but closest-to-crosshair still picks phantoms; NMS cost scales with the flood | v8: player detected 0.88 but hit@15 0.14 (§5.5) |
+| raise the conf threshold | phantoms sit at ≈ 0.9 (hinge), above typical player confidence, so players go first | AimTrap's threshold dilemma |
+| temporal confirmation (n frames) | phantoms re-drawn per frame are rejected, but at +n frames of latency (n = 3 ≈ +50 ms at 60 FPS); RootKit has no tracker | latency tax (§3) |
+| size/shape priors | defender randomises phantom sizes and aspect ratios per frame | to implement |
+| switch to an NMS-free detector | removes the energy horn only; phantoms still mislead; needs re-engineering and retraining | — |
+| retrain on harvested frames | works (§5.8–5.9), but needs awareness, a harvest, labels and a training pipeline; harvesting in-game generates false-lock evidence; phantom layouts can rotate per patch | §5.8; rotation transfer **untested** |
+
+4. **Capping or adapting is itself a signal of a bar raised.** It moves the cheater from a stock download to custom ML engineering, which most of the cheat market cannot do, and every patch-level rotation forces a repeat.
+5. **Prevention and accountability in one mechanism.** The same phantoms that slow the aimbot are honeypots. AimTrap-style trajectory analysis converts locks on phantoms into explainable ban evidence.
+
+**Honest weak points (and the experiment each needs).**
+* **Energy horn is weak** at achievable counts (≤ 1.5 ms). Present it as a cost that *scales with the flood*, not as the headline, unless a stronger optimiser reaches thousands of candidates. → Overload-style objective, more steps, ε study.
+* **Retraining strips phantoms.** The perishability argument rests on retraining against layout A *not* transferring to layout B. → **Cross-layout rotation experiment** (most important next step).
+* **No transfer to unseen v5m.** → Add v5m (and NanoDet) to the proxy ensemble, with EOT.
+
 ## 6. Recommended next steps
 1. **Move to real game frames and proxy ensembles** (CS2 / CF captures, or an open-source shooter with engine ground truth). Keep EOT on by default.
 2. **Redesign the slowdown objective to be temporally correlated** (O8). Options: (a) per-engagement consistent aim bias, so the aimbot converges confidently onto a point just off the hitbox; (b) a decoy closer to the crosshair than the real player, kept stable for several frames and then moved, so the controller keeps re-acquiring; (c) offsets matched to the smoothing gain to cause overshoot. Measure the time-to-hit *distribution*, plus false locks as evidence.
