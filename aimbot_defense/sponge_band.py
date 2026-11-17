@@ -39,7 +39,7 @@ STEPS = int(os.environ.get("SB_STEPS", "60"))
 N_TEST = int(os.environ.get("SB_NTEST", "32"))
 CLEAN_PASS = os.environ.get("SB_CLEAN_PASS", "0") == "1"   # add a non-EOT pass each step
 EPS_LIST = [int(v) for v in os.environ.get("SB_EPS", "8,16").split(",")]
-SB_OBJ = os.environ.get("SB_OBJ", "band")  # "band" (phantoms + player band) | "hide" (IC-style baseline)
+SB_OBJ = os.environ.get("SB_OBJ", "band")  # "band" (phantoms + player band) | "hide" (IC baseline) | "floodhide"
 COUNTERS = {"stock": (0.4, 10), "top1": (0.4, 1), "nocap": (0.4, 1000), "thr0.85": (0.85, 10)}
 OUT = os.path.join(C.ROOT, "out", os.environ.get("SB_OUT", "sponge_band"))
 
@@ -62,6 +62,9 @@ def band_loss(box, s, masks, pms):
             + ((box[b][ph][:, 2:] - wh[ph]).abs() / wh[ph]).sum() + ((box[b][ph][:, :2] - C.V5C[ph]).abs() / 4).sum()
         for pm in plist:
             sl = s[b][pm]
+            if SB_OBJ == "floodhide":  # hide the player (IC-style) and keep the phantoms
+                tot = tot - PL_W * (torch.log(1 - sl) * (sl > 0.05)).sum()
+                continue
             tot = tot - PL_W * (torch.log(1 - sl) * (sl > BAND[1])).sum()   # no player box above the band
             top = sl.max()
             if top < BAND[0] + 0.05:                                          # best player box stays detected
@@ -137,13 +140,15 @@ def evaluate(attackers, variants, test):
             for cn, (conf, md) in COUNTERS.items():
                 dets, ms = zip(*[post(p, conf, md) for p in preds])
                 player = np.mean([bool(len(d) and _iou(d[:, :4], f.persons).max() > 0.3) for d, f in zip(dets, test)])
-                ttks = []
+                ttks, fakes = [], []
                 for i, (d, f) in enumerate(zip(dets, test)):
-                    ttks += simulate([d], f.persons, thr=0.0, gain=0.4, starts=12, seed=i, return_ttks=True)["ttks"]
+                    r_ = simulate([d], f.persons, thr=0.0, gain=0.4, starts=12, seed=i, return_ttks=True)
+                    ttks += r_["ttks"]
+                    fakes.append(r_["fake"])
                 ttks = np.asarray(ttks)
                 r = dict(attacker=an, frames=vn, counter=cn, cand=float(np.mean(cands)), nms_ms=float(np.mean(ms)),
                          inf_ms=lat, player_conf_median=float(np.median(pconf)), player_in_output=float(player),
-                         hit10=float((ttks <= 10).mean()))
+                         hit10=float((ttks <= 10).mean()), fake_locks=float(np.mean(fakes)))
                 rows.append(r)
                 print(json.dumps(r), flush=True)
     return rows
