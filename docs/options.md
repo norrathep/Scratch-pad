@@ -239,6 +239,46 @@ Metric: hit within 10 steps; "≤150 ms" uses CPU latency per step (n 17, s 35, 
 * **Make the negatives perishable.** Phantom layouts that change per session or patch, rotated faster than the attacker can harvest and retrain. This still gives free negatives each time, but costs a retraining cycle per rotation.
 * **Use phantoms purely as a detector of stock cheats, and keep hide for prevention.** That is AimTrap's split, here in screen space.
 
+### 5.9 Multi-checkpoint gradient conflict ("dilemma") in the YOLOv5 pipeline (`CAP_OBJ=dilemma CAP_GAMMA=1000`)
+**Design: an exact ablation of flood round 2.** The proxies are identical {v5n, v5s, flood-r1 defender-retrained v5n and v5s}, and so are the seeds, data and attacker pipeline. One term is added to the loss:
+
+  γ · cos(∇θ l_player, ∇θ l_phantom), γ = 1000.
+
+Here θ = all weights of a YOLOv5n checkpoint. The checkpoint is drawn at random each PGD step from a simulated retraining trajectory: the base v5n, then the defender's own v5n retrained on flood-r1 frames after 1, 3 and 5 epochs (split A, disjoint from the attacker's split B).
+
+**The term took effect.** Gradient cosine on the test cloaks, averaged over the 80 scenes:
+
+| weights evaluated at | clean | flood r2 | dilemma |
+|---|---|---|---|
+| base v5n | −0.58 | −0.50 | **−0.76** |
+| defender retrained, epoch 1 / 3 / 5 | −0.62 / −0.68 / −0.63 | −0.65 / −0.69 / −0.71 | **−0.91 / −0.92 / −0.94** |
+| *attacker's* final retrained v5n (never seen by the defender) | −0.61 | −0.67 | **−0.83** |
+
+The conflict transfers to the attacker's own trajectory: the cosine is still −0.83 at the end of *their* retraining.
+
+**Outcome.** Hit within 10 steps; b = boxes per frame, fk = false locks per engagement.
+
+| attacker | hide | flood | dilemma |
+|---|---|---|---|
+| stock v5n | 0.00 | 0.03 (b 22, fk 39) | 0.16 (b 8, fk 25) |
+| stock v5s | 0.00 | 0.04 (b 38, fk 44) | 0.06 (b 27, fk 39) |
+| stock v5m | 0.70 | 0.72 | 0.77 |
+| retrained v5n (clean) | 0.38 (0.83) | 0.47 (0.74) | **0.49** (0.78), b 0.8, fk 4.9 |
+| retrained v5s (clean) | 0.65 (0.88) | 0.62 (0.84) | **0.61** (0.83) |
+| retrained v5m (clean) | 0.78 (0.82) | 0.79 (0.85) | **0.83** (0.86) |
+
+**Result: negative again.** The attacker removed the phantoms (0.8 boxes per frame) and recovered the player as well as against plain flood: the protection left is 0.29 against 0.27. That happened *even though the gradients were still strongly opposed at the attacker's final weights* (−0.83). The only gains are about 2× more false locks for retrained n (4.9 against 2.6). The cost is weaker protection against stock n (0.16 against 0.03), because the gradient term takes budget from the flood and hide terms.
+
+**Why a gradient-level dilemma cannot work (the key lesson).**
+* Two gradients with cos > −1 always admit a direction that lowers **both** losses: the cone {d : d·g_pos < 0, d·g_neg < 0} is non-empty unless the gradients are exactly anti-parallel. At cos = −0.83 the non-opposed component is sin(arccos 0.83) ≈ 0.56 of the gradient, which is plenty of room in 1.9 M dimensions.
+* This is the standard picture from multi-task learning (e.g. PCGrad): conflicting gradients slow joint learning and bias the path, but they do not prevent it. The attacker's optimiser simply follows the joint-descent cone.
+* A real dilemma has to exist at the **function level**: no detector within the attacker's capacity budget can both detect players and reject phantoms on these frames. Phantoms are background + an ε = 8/255 pattern, so that is false for any reasonable detector. The evidence for it being false is exactly what we measured: retraining separates them every time.
+
+**Implications for the project.**
+1. *Drop gradient-geometry dilemmas.* They are measurable and transferable (−0.83 on unseen attacker weights is itself a nice finding), but they do not bind.
+2. *A binding dilemma needs a representational argument.* Either the phantom and the player must be indistinguishable *in the input* to a capacity-bounded model (phantoms attached to or overlapping the player, sharing its pixels), or the separating function must be expensive, which is the capacity/latency route of §5.7. Both are claims about *functions*, so test them by measuring the best post-retraining hit rate per model size, not gradient cosines.
+3. *Phantoms remain valuable as a tripwire* against stock and non-adaptive cheats (25–44 false locks per engagement).
+
 ## 6. Recommended next steps
 1. **Move to real game frames and proxy ensembles** (CS2 / CF captures, or an open-source shooter with engine ground truth). Keep EOT on by default.
 2. **Redesign the slowdown objective to be temporally correlated** (O8). Options: (a) per-engagement consistent aim bias, so the aimbot converges confidently onto a point just off the hitbox; (b) a decoy closer to the crosshair than the real player, kept stable for several frames and then moved, so the controller keeps re-acquiring; (c) offsets matched to the smoothing gain to cause overshoot. Measure the time-to-hit *distribution*, plus false locks as evidence.
