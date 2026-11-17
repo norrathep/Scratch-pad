@@ -279,6 +279,20 @@ The conflict transfers to the attacker's own trajectory: the cosine is still −
 2. *A binding dilemma needs a representational argument.* Either the phantom and the player must be indistinguishable *in the input* to a capacity-bounded model (phantoms attached to or overlapping the player, sharing its pixels), or the separating function must be expensive, which is the capacity/latency route of §5.7. Both are claims about *functions*, so test them by measuring the best post-retraining hit rate per model size, not gradient cosines.
 3. *Phantoms remain valuable as a tripwire* against stock and non-adaptive cheats (25–44 false locks per engagement).
 
+### 5.10 How much latency can an "energy" cloak force? (bound for the narrative)
+Only the post-processing is input-dependent; the CNN costs the same on every frame. Measured on CPU (4 threads, 320×320, batch 1):
+* **Inference:** v5n 22.8 ms, v5s 36.5 ms, v5m 58.0 ms.
+* **YOLOv5 `non_max_suppression`** (conf 0.4, IoU 0.45, `max_det` 300), with N candidates above threshold:
+
+| N candidates | 2 | 50 | 300 | 1000 | 3000 | 6300 (every anchor) |
+|---|---|---|---|---|---|---|
+| **stacked on the player** (NMS keeps 1 box, so the output looks normal) | 0.25 ms | 0.26 | 0.35 | 0.76 | 1.37 | **1.93 ms** |
+| **spread** (candidates survive as visible boxes) | 0.21 ms | 0.24 | 0.62 | 2.88 | 15.1 | **30.5 ms** (300 boxes out) |
+
+* **A *stealthy* energy cloak can add at most ~1.7 ms per frame** (≈ 8 % of v5n), and only if *every* anchor clears the threshold. Our ε = 8/255 floods reached 20–50 candidates, i.e. ≈ 0.3 ms.
+* **A visible flood can add up to ~30 ms**, but the overlay then shows hundreds of boxes, and capping candidates (`max_nms` / `max_det` / top-k) removes the cost.
+* **Conclusion:** compute or energy slowdown cannot carry the "slow the aimbot" claim at this scale. It is a minor side effect at best.
+
 ## 6. Recommended next steps
 1. **Move to real game frames and proxy ensembles** (CS2 / CF captures, or an open-source shooter with engine ground truth). Keep EOT on by default.
 2. **Redesign the slowdown objective to be temporally correlated** (O8). Options: (a) per-engagement consistent aim bias, so the aimbot converges confidently onto a point just off the hitbox; (b) a decoy closer to the crosshair than the real player, kept stable for several frames and then moved, so the controller keeps re-acquiring; (c) offsets matched to the smoothing gain to cause overshoot. Measure the time-to-hit *distribution*, plus false locks as evidence.
