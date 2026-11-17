@@ -24,9 +24,9 @@ Do *not* claim that phantoms out-prevent IC: on the proxy models IC-style hiding
 ## Experiments (ε = 8/255, 80 test scenes)
 | # | experiment | status |
 |---|---|---|
-| E1 | Main table: clean / IC-style hide / phantom (tuned) on v5n, v5s, v5m (proxies) and v5l, v8n (held out). Metrics: hit@10, player kept in output, player median conf, candidates, NMS ms | running (`out/paper_band_tuned`, `out/paper_hide`) |
-| E2 | Counter-measure table (stock / top1 / nocap / thr0.85) | same run |
-| E3 | Ablation: untuned weights, no clean pass (`out/paper_band_base`) | same run |
+| E1 | Main table: clean / IC-style hide / phantom (tuned) on v5n, v5s, v5m (proxies) and v5l, v8n (held out). Metrics: hit@10, player kept in output, player median conf, candidates, NMS ms | done (`out/paper_band_tuned`, `out/paper_hide`; §5.14) |
+| E2 | Counter-measure table (stock / top1 / nocap / thr0.85) | done |
+| E3 | Ablation: untuned weights, no clean pass (`out/paper_band_base`) | done |
 | E4 | Perceptibility: PSNR / SSIM / LPIPS of cloaked frames, plus an example figure | to do (cheap) |
 | E5 | False-lock counts per engagement for every cloak, plus the hide/phantom per-frame mix curve | done (§5.14); switch to "locks on defender-placed phantoms" for the paper |
 | E6 | Hide + phantoms variant | done (`out/paper_floodhide`) |
