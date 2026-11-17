@@ -22,3 +22,5 @@ out/capacity_dilemma/train/
 out/sponge5.log
 out/sponge_band/*.pt
 out/sponge_band.log
+out/paper_*/*.pt
+out/paper_*.log

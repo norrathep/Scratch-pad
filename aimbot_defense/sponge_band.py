@@ -31,10 +31,17 @@ from .core import load_model as load_v8, raw as raw_v8, xywh2xyxy
 from .sponge5 import non_max_suppression, sponge_masks
 
 torch.set_num_threads(4)
-BAND = (0.6, 0.8)
-PH_MIN = 0.9
+BAND = tuple(float(v) for v in os.environ.get("SB_BAND", "0.6,0.8").split(","))  # player best-box band
+PH_MIN = float(os.environ.get("SB_PH_MIN", "0.9"))    # phantom confidence target
+PH_W = float(os.environ.get("SB_PH_W", "1"))          # phantom term weight
+PL_W = float(os.environ.get("SB_PL_W", "4"))          # player-band term weight
+STEPS = int(os.environ.get("SB_STEPS", "60"))
+N_TEST = int(os.environ.get("SB_NTEST", "32"))
+CLEAN_PASS = os.environ.get("SB_CLEAN_PASS", "0") == "1"   # add a non-EOT pass each step
+EPS_LIST = [int(v) for v in os.environ.get("SB_EPS", "8,16").split(",")]
+SB_OBJ = os.environ.get("SB_OBJ", "band")  # "band" (phantoms + player band) | "hide" (IC-style baseline)
 COUNTERS = {"stock": (0.4, 10), "top1": (0.4, 1), "nocap": (0.4, 1000), "thr0.85": (0.85, 10)}
-OUT = os.path.join(C.ROOT, "out", "sponge_band")
+OUT = os.path.join(C.ROOT, "out", os.environ.get("SB_OUT", "sponge_band"))
 
 
 def player_masks(persons):
@@ -46,21 +53,24 @@ def player_masks(persons):
 
 def band_loss(box, s, masks, pms):
     s = s.clamp(1e-6, 1 - 1e-6)
+    if SB_OBJ == "hide":  # Invisibility Cloak objective (Eq. 3): every person confidence -> 0
+        return -torch.log(1 - s).sum() / len(s)
     tot = 0.0
     for b, ((ph, _, wh), plist) in enumerate(zip(masks, pms)):
         sp = s[b][ph]
-        tot = tot - (torch.log(sp) * (sp < PH_MIN + 0.03)).sum() \
+        tot = tot - PH_W * (torch.log(sp) * (sp < PH_MIN + 0.03)).sum() \
             + ((box[b][ph][:, 2:] - wh[ph]).abs() / wh[ph]).sum() + ((box[b][ph][:, :2] - C.V5C[ph]).abs() / 4).sum()
         for pm in plist:
             sl = s[b][pm]
-            tot = tot - 4 * (torch.log(1 - sl) * (sl > BAND[1])).sum()      # no player box above the band
+            tot = tot - PL_W * (torch.log(1 - sl) * (sl > BAND[1])).sum()   # no player box above the band
             top = sl.max()
             if top < BAND[0] + 0.05:                                          # best player box stays detected
-                tot = tot - 4 * torch.log(top)
+                tot = tot - PL_W * torch.log(top)
     return tot / len(s)
 
 
-def craft(models, x, persons, eps, steps=60, bs=16, seed=0):
+def craft(models, x, persons, eps, steps=None, bs=16, seed=0):
+    steps = steps or STEPS
     out = []
     for i in range(0, len(x), bs):
         xb = x[i:i + bs]
@@ -76,6 +86,9 @@ def craft(models, x, persons, eps, steps=60, bs=16, seed=0):
             for m in models:
                 box, s = C.person_conf(m, C.eot_transform(xa))
                 loss = loss + band_loss(box, s, masks, pms)
+                if CLEAN_PASS:  # also on the untransformed frame, which is what a stock aimbot actually sees
+                    box, s = C.person_conf(m, xa)
+                    loss = loss + band_loss(box, s, masks, pms)
             gr, = torch.autograd.grad(loss, d)
             d = (d.detach() - a * gr.sign()).clamp(-eps, eps)
             d = (xb + d).clamp(0, 1) - xb
@@ -138,13 +151,13 @@ def evaluate(attackers, variants, test):
 
 def main():
     sp, _ = C.load_frames()
-    test = sp["T"][:32]
+    test = sp["T"][:N_TEST]
     x = torch.stack([f.x for f in test])
     P = [f.persons for f in test]
     os.makedirs(OUT, exist_ok=True)
     proxies = [C.load5(os.path.join(C.W, f"yolov5{s}.pt")) for s in "nsm"]
     variants = {"clean": x}
-    for eps in (8, 16):
+    for eps in EPS_LIST:
         p = os.path.join(OUT, f"band_eps{eps}.pt")
         if os.path.exists(p):
             variants[f"band eps={eps}/255"] = torch.load(p)
