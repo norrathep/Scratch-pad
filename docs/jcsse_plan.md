@@ -11,8 +11,10 @@
 
 Keep "energy" out of the title. Compute cost is measured and reported, but at achievable budgets it is ≤ 1 ms (§5.10–5.13 of `options.md`), so it cannot be the headline.
 
-## Claim (one sentence)
-An imperceptible (ε = 8/255) perturbation that keeps the real player *detected at normal confidence* but adds *higher-confidence* phantom players. It exploits the aimbot's own post-processing (keep top-k by confidence, aim at the box closest to the crosshair), so a stock aimbot misses, and every cheap fix costs the cheater recall or produces ban evidence.
+## Claim (revised after the IC-style baseline, `options.md` §5.14)
+Invisibility-Cloak-style hiding prevents aiming but leaves **no evidence**: the aimbot simply stops. Phantom flooding turns the aimbot's own post-processing (keep top-k by confidence, aim at the box closest to the crosshair) against it. The stock aimbot locks onto defender-placed phantoms ~40 times per engagement (≈ 10× clean), while its hit rate within 10 steps falls from ~0.87 to ~0.3. The paper characterises this **prevention vs accountability trade-off**, including a tunable per-frame mix.
+
+Do *not* claim that phantoms out-prevent IC: on the proxy models IC-style hiding reaches 0.00.
 
 ## Contributions
 1. **Method:** the phantom-flood loss with a player-confidence band. Phantoms ≥ 0.95; player best box in [0.5, 0.7]; EOT; YOLOv5 n/s/m ensemble (the IC/AimTrap model family).
@@ -26,7 +28,8 @@ An imperceptible (ε = 8/255) perturbation that keeps the real player *detected 
 | E2 | Counter-measure table (stock / top1 / nocap / thr0.85) | same run |
 | E3 | Ablation: untuned weights, no clean pass (`out/paper_band_base`) | same run |
 | E4 | Perceptibility: PSNR / SSIM / LPIPS of cloaked frames, plus an example figure | to do (cheap) |
-| E5 | False-lock (honeypot) counts per engagement for stock models | have for flood (§5.8); add for E1 frames |
+| E5 | False-lock counts per engagement for every cloak, plus the hide/phantom per-frame mix curve | done (§5.14); switch to "locks on defender-placed phantoms" for the paper |
+| E6 | Hide + phantoms variant | done (`out/paper_floodhide`) |
 
 ## Limitations to state explicitly
 * **An adaptive cheater who retrains** on harvested frames strips the phantoms (§5.8–5.9). Report it as a limitation, with the numbers.

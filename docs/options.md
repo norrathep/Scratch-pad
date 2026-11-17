@@ -379,6 +379,33 @@ On clean frames, thr0.85 gives v5n/s/m 0.28 / 0.41 / 0.62, so raising the thresh
 4. **Energy is still negligible** (≤ 0.5 ms NMS against 18–60 ms inference).
 5. **Transfer to held-out models is weak:** v5l 0.84–0.85, v8n 0.74–0.84. IC also reports partial transfer; adding more architectures (l, v8, NanoDet) to the ensemble is the standard fix.
 
+### 5.14 Paper runs (80 scenes, ε = 8/255, proxies YOLOv5 n/s/m, EOT + clean pass): prevention against accountability
+Hit within 10 aiming steps / false locks per engagement (aimbot locked on a box that is not a labelled player), RootKit post-processing:
+
+| attacker | counter | clean | IC-style hide | hide + phantoms | phantoms, player kept (tuned) |
+|---|---|---|---|---|---|
+| v5n | stock | 0.83 / 2.6 | **0.00** / 0.0 | 0.23 / **41.9** | 0.32 / **37.4** (player kept 72 %) |
+| v5s | stock | 0.87 / 3.6 | **0.00** / 0.0 | 0.21 / **42.7** | 0.27 / **40.5** (64 %) |
+| v5m | stock | 0.92 / 4.0 | **0.00** / 0.0 | 0.26 / **39.9** | 0.33 / **37.1** (81 %) |
+| v5n/s/m | top1 | 0.84–0.96 | 0.00 | 0.46–0.60 / 21–28 | 0.61–0.70 / 16–21 |
+| v5n/s/m | nocap | 0.83–0.92 | 0.00 | 0.10–0.20 / 43–50 | 0.14–0.28 / 40–48 |
+| v5n/s/m | thr0.85 | 0.29–0.60 | 0.00 | 0.04–0.10 / 0 | 0.04–0.14 / 0 |
+| v5l (held out) | stock | 0.92 | **0.58** | 0.83 | 0.85 |
+| v8n (held out) | stock | 0.89 | **0.40** | 0.77 | 0.82 |
+
+**Per-frame mix of hide and phantom (tuned) cloaks** (`out/paper_mix`), stock aimbot n/s/m:
+
+| phantom frames | 0 % | 10 % | 20 % | 50 % | 100 % |
+|---|---|---|---|---|---|
+| hit@10 | 0.00 | 0.11–0.14 | 0.20–0.22 | 0.28–0.31 | 0.28–0.32 |
+| false locks | 0.0 | 1.2–1.3 | 4.9–5.5 | 17–18 | 38–40 |
+
+**Reading.**
+1. **For pure prevention, IC-style hiding (with EOT and an n/s/m ensemble) dominates.** It gives 0.00 on the proxy models under every counter, and transfers better (v5l 0.58, v8n 0.40).
+2. **Phantoms buy accountability.** The stock aimbot locks onto empty space 37–43 times per engagement, against 2.6–4.0 on clean frames. Hiding produces **no** behavioural evidence at all, because the aimbot just stops moving. The price is prevention: hit@10 0.21–0.33 instead of 0.
+3. **Mixing gives a tunable curve, not a free lunch.** Evidence grows roughly linearly with the phantom-frame share, while prevention degrades quickly: 10 % phantom frames already allow 0.11–0.14 hits.
+4. **Caveat on the false-lock metric.** On clean frames, COCO persons below our 1.5 % area filter count as "false", which gives a non-zero baseline. In a game the defender knows the exact phantom positions, so locks *on defender-placed phantoms* can be counted directly. Use that metric in the paper.
+
 ## 6. Recommended next steps
 1. **Move to real game frames and proxy ensembles** (CS2 / CF captures, or an open-source shooter with engine ground truth). Keep EOT on by default.
 2. **Redesign the slowdown objective to be temporally correlated** (O8). Options: (a) per-engagement consistent aim bias, so the aimbot converges confidently onto a point just off the hitbox; (b) a decoy closer to the crosshair than the real player, kept stable for several frames and then moved, so the controller keeps re-acquiring; (c) offsets matched to the smoothing gain to cause overshoot. Measure the time-to-hit *distribution*, plus false locks as evidence.

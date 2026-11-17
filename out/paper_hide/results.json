@@ -4,439 +4,479 @@
   "frames": "clean",
   "counter": "stock",
   "cand": 17.1,
-  "nms_ms": 0.2105665125213818,
-  "inf_ms": 22.0858449500156,
+  "nms_ms": 0.27440908745575143,
+  "inf_ms": 20.183754250001584,
   "player_conf_median": 0.7588922381401062,
   "player_in_output": 0.875,
-  "hit10": 0.8270833333333333
+  "hit10": 0.8270833333333333,
+  "fake_locks": 2.640625
  },
  {
   "attacker": "v5n",
   "frames": "clean",
   "counter": "top1",
   "cand": 17.1,
-  "nms_ms": 0.2652644749332467,
-  "inf_ms": 22.0858449500156,
+  "nms_ms": 0.31233833756232343,
+  "inf_ms": 20.183754250001584,
   "player_conf_median": 0.7588922381401062,
   "player_in_output": 0.8375,
-  "hit10": 0.8354166666666667
+  "hit10": 0.8354166666666667,
+  "fake_locks": 2.1322916666666667
  },
  {
   "attacker": "v5n",
   "frames": "clean",
   "counter": "nocap",
   "cand": 17.1,
-  "nms_ms": 0.26325966257445543,
-  "inf_ms": 22.0858449500156,
+  "nms_ms": 0.24084582502155172,
+  "inf_ms": 20.183754250001584,
   "player_conf_median": 0.7588922381401062,
   "player_in_output": 0.875,
-  "hit10": 0.8270833333333333
+  "hit10": 0.8270833333333333,
+  "fake_locks": 2.640625
  },
  {
   "attacker": "v5n",
   "frames": "clean",
   "counter": "thr0.85",
   "cand": 17.1,
-  "nms_ms": 0.14566421237987015,
-  "inf_ms": 22.0858449500156,
+  "nms_ms": 0.154487362499367,
+  "inf_ms": 20.183754250001584,
   "player_conf_median": 0.7588922381401062,
   "player_in_output": 0.2875,
-  "hit10": 0.2875
+  "hit10": 0.2875,
+  "fake_locks": 0.0
  },
  {
   "attacker": "v5n",
   "frames": "band eps=8/255",
   "counter": "stock",
   "cand": 0.0,
-  "nms_ms": 0.0793633249713821,
-  "inf_ms": 22.0858449500156,
+  "nms_ms": 0.10595565006497054,
+  "inf_ms": 20.183754250001584,
   "player_conf_median": 0.0,
   "player_in_output": 0.0,
-  "hit10": 0.0
+  "hit10": 0.0,
+  "fake_locks": 0.0
  },
  {
   "attacker": "v5n",
   "frames": "band eps=8/255",
   "counter": "top1",
   "cand": 0.0,
-  "nms_ms": 0.08754672503528127,
-  "inf_ms": 22.0858449500156,
+  "nms_ms": 0.10024904996726036,
+  "inf_ms": 20.183754250001584,
   "player_conf_median": 0.0,
   "player_in_output": 0.0,
-  "hit10": 0.0
+  "hit10": 0.0,
+  "fake_locks": 0.0
  },
  {
   "attacker": "v5n",
   "frames": "band eps=8/255",
   "counter": "nocap",
   "cand": 0.0,
-  "nms_ms": 0.09010782500809,
-  "inf_ms": 22.0858449500156,
+  "nms_ms": 0.09625027497577321,
+  "inf_ms": 20.183754250001584,
   "player_conf_median": 0.0,
   "player_in_output": 0.0,
-  "hit10": 0.0
+  "hit10": 0.0,
+  "fake_locks": 0.0
  },
  {
   "attacker": "v5n",
   "frames": "band eps=8/255",
   "counter": "thr0.85",
   "cand": 0.0,
-  "nms_ms": 0.06091878741472101,
-  "inf_ms": 22.0858449500156,
+  "nms_ms": 0.05843456253842305,
+  "inf_ms": 20.183754250001584,
   "player_conf_median": 0.0,
   "player_in_output": 0.0,
-  "hit10": 0.0
+  "hit10": 0.0,
+  "fake_locks": 0.0
  },
  {
   "attacker": "v5s",
   "frames": "clean",
   "counter": "stock",
   "cand": 22.2,
-  "nms_ms": 0.22230874999422667,
-  "inf_ms": 30.49245309998696,
+  "nms_ms": 0.24041551262143912,
+  "inf_ms": 31.512460999965697,
   "player_conf_median": 0.8454388976097107,
   "player_in_output": 0.925,
-  "hit10": 0.8677083333333333
+  "hit10": 0.8677083333333333,
+  "fake_locks": 3.5583333333333336
  },
  {
   "attacker": "v5s",
   "frames": "clean",
   "counter": "top1",
   "cand": 22.2,
-  "nms_ms": 0.21630301246204908,
-  "inf_ms": 30.49245309998696,
+  "nms_ms": 0.22497836253023706,
+  "inf_ms": 31.512460999965697,
   "player_conf_median": 0.8454388976097107,
   "player_in_output": 0.9,
-  "hit10": 0.9010416666666666
+  "hit10": 0.9010416666666666,
+  "fake_locks": 1.6739583333333332
  },
  {
   "attacker": "v5s",
   "frames": "clean",
   "counter": "nocap",
   "cand": 22.2,
-  "nms_ms": 0.24559021242112067,
-  "inf_ms": 30.49245309998696,
+  "nms_ms": 0.2123150374927718,
+  "inf_ms": 31.512460999965697,
   "player_conf_median": 0.8454388976097107,
   "player_in_output": 0.925,
-  "hit10": 0.8677083333333333
+  "hit10": 0.8677083333333333,
+  "fake_locks": 3.5583333333333336
  },
  {
   "attacker": "v5s",
   "frames": "clean",
   "counter": "thr0.85",
   "cand": 22.2,
-  "nms_ms": 0.1912432625317706,
-  "inf_ms": 30.49245309998696,
+  "nms_ms": 0.15448526249883798,
+  "inf_ms": 31.512460999965697,
   "player_conf_median": 0.8454388976097107,
   "player_in_output": 0.475,
-  "hit10": 0.475
+  "hit10": 0.475,
+  "fake_locks": 0.0
  },
  {
   "attacker": "v5s",
   "frames": "band eps=8/255",
   "counter": "stock",
   "cand": 0.0,
-  "nms_ms": 0.0818128499759041,
-  "inf_ms": 30.49245309998696,
+  "nms_ms": 0.08311406253369569,
+  "inf_ms": 31.512460999965697,
   "player_conf_median": 0.0,
   "player_in_output": 0.0,
-  "hit10": 0.0
+  "hit10": 0.0,
+  "fake_locks": 0.0
  },
  {
   "attacker": "v5s",
   "frames": "band eps=8/255",
   "counter": "top1",
   "cand": 0.0,
-  "nms_ms": 0.08574133750016699,
-  "inf_ms": 30.49245309998696,
+  "nms_ms": 0.08620448750207288,
+  "inf_ms": 31.512460999965697,
   "player_conf_median": 0.0,
   "player_in_output": 0.0,
-  "hit10": 0.0
+  "hit10": 0.0,
+  "fake_locks": 0.0
  },
  {
   "attacker": "v5s",
   "frames": "band eps=8/255",
   "counter": "nocap",
   "cand": 0.0,
-  "nms_ms": 0.09091774990110935,
-  "inf_ms": 30.49245309998696,
+  "nms_ms": 0.11620491251278509,
+  "inf_ms": 31.512460999965697,
   "player_conf_median": 0.0,
   "player_in_output": 0.0,
-  "hit10": 0.0
+  "hit10": 0.0,
+  "fake_locks": 0.0
  },
  {
   "attacker": "v5s",
   "frames": "band eps=8/255",
   "counter": "thr0.85",
   "cand": 0.0,
-  "nms_ms": 0.06595527495392162,
-  "inf_ms": 30.49245309998696,
+  "nms_ms": 0.06288941248158153,
+  "inf_ms": 31.512460999965697,
   "player_conf_median": 0.0,
   "player_in_output": 0.0,
-  "hit10": 0.0
+  "hit10": 0.0,
+  "fake_locks": 0.0
  },
  {
   "attacker": "v5m",
   "frames": "clean",
   "counter": "stock",
   "cand": 24.6125,
-  "nms_ms": 0.5607111124845687,
-  "inf_ms": 65.04231710000568,
+  "nms_ms": 0.20075016251439592,
+  "inf_ms": 62.28470374999233,
   "player_conf_median": 0.8779260814189911,
   "player_in_output": 0.975,
-  "hit10": 0.915625
+  "hit10": 0.915625,
+  "fake_locks": 3.9552083333333328
  },
  {
   "attacker": "v5m",
   "frames": "clean",
   "counter": "top1",
   "cand": 24.6125,
-  "nms_ms": 0.4073984500109873,
-  "inf_ms": 65.04231710000568,
+  "nms_ms": 0.4464893750309784,
+  "inf_ms": 62.28470374999233,
   "player_conf_median": 0.8779260814189911,
   "player_in_output": 0.95,
-  "hit10": 0.9572916666666667
+  "hit10": 0.9572916666666667,
+  "fake_locks": 1.621875
  },
  {
   "attacker": "v5m",
   "frames": "clean",
   "counter": "nocap",
   "cand": 24.6125,
-  "nms_ms": 0.3490872624297481,
-  "inf_ms": 65.04231710000568,
+  "nms_ms": 0.17061973746876902,
+  "inf_ms": 62.28470374999233,
   "player_conf_median": 0.8779260814189911,
   "player_in_output": 0.975,
-  "hit10": 0.915625
+  "hit10": 0.915625,
+  "fake_locks": 3.9552083333333328
  },
  {
   "attacker": "v5m",
   "frames": "clean",
   "counter": "thr0.85",
   "cand": 24.6125,
-  "nms_ms": 0.21476361248460307,
-  "inf_ms": 65.04231710000568,
+  "nms_ms": 0.14683412498470716,
+  "inf_ms": 62.28470374999233,
   "player_conf_median": 0.8779260814189911,
   "player_in_output": 0.6,
-  "hit10": 0.5958333333333333
+  "hit10": 0.5958333333333333,
+  "fake_locks": 0.884375
  },
  {
   "attacker": "v5m",
   "frames": "band eps=8/255",
   "counter": "stock",
   "cand": 0.0,
-  "nms_ms": 0.06845422500418863,
-  "inf_ms": 65.04231710000568,
+  "nms_ms": 0.09862932498663213,
+  "inf_ms": 62.28470374999233,
   "player_conf_median": 0.0,
   "player_in_output": 0.0,
-  "hit10": 0.0
+  "hit10": 0.0,
+  "fake_locks": 0.0
  },
  {
   "attacker": "v5m",
   "frames": "band eps=8/255",
   "counter": "top1",
   "cand": 0.0,
-  "nms_ms": 0.07962963759382546,
-  "inf_ms": 65.04231710000568,
+  "nms_ms": 0.1142163000167784,
+  "inf_ms": 62.28470374999233,
   "player_conf_median": 0.0,
   "player_in_output": 0.0,
-  "hit10": 0.0
+  "hit10": 0.0,
+  "fake_locks": 0.0
  },
  {
   "attacker": "v5m",
   "frames": "band eps=8/255",
   "counter": "nocap",
   "cand": 0.0,
-  "nms_ms": 0.11012843751814216,
-  "inf_ms": 65.04231710000568,
+  "nms_ms": 0.10149882499490559,
+  "inf_ms": 62.28470374999233,
   "player_conf_median": 0.0,
   "player_in_output": 0.0,
-  "hit10": 0.0
+  "hit10": 0.0,
+  "fake_locks": 0.0
  },
  {
   "attacker": "v5m",
   "frames": "band eps=8/255",
   "counter": "thr0.85",
   "cand": 0.0,
-  "nms_ms": 0.06033115001855549,
-  "inf_ms": 65.04231710000568,
+  "nms_ms": 0.0768880999544308,
+  "inf_ms": 62.28470374999233,
   "player_conf_median": 0.0,
   "player_in_output": 0.0,
-  "hit10": 0.0
+  "hit10": 0.0,
+  "fake_locks": 0.0
  },
  {
   "attacker": "v5l",
   "frames": "clean",
   "counter": "stock",
   "cand": 27.725,
-  "nms_ms": 0.3418810124912852,
-  "inf_ms": 114.99198480000814,
+  "nms_ms": 0.19956267498173474,
+  "inf_ms": 104.11945744999684,
   "player_conf_median": 0.9099299311637878,
   "player_in_output": 0.9875,
-  "hit10": 0.9177083333333333
+  "hit10": 0.9177083333333333,
+  "fake_locks": 3.8583333333333334
  },
  {
   "attacker": "v5l",
   "frames": "clean",
   "counter": "top1",
   "cand": 27.725,
-  "nms_ms": 0.2883699499875547,
-  "inf_ms": 114.99198480000814,
+  "nms_ms": 0.21362978750403272,
+  "inf_ms": 104.11945744999684,
   "player_conf_median": 0.9099299311637878,
   "player_in_output": 0.9375,
-  "hit10": 0.9510416666666667
+  "hit10": 0.9510416666666667,
+  "fake_locks": 1.90625
  },
  {
   "attacker": "v5l",
   "frames": "clean",
   "counter": "nocap",
   "cand": 27.725,
-  "nms_ms": 0.2244658750328199,
-  "inf_ms": 114.99198480000814,
+  "nms_ms": 0.21791046249290957,
+  "inf_ms": 104.11945744999684,
   "player_conf_median": 0.9099299311637878,
   "player_in_output": 0.9875,
-  "hit10": 0.9177083333333333
+  "hit10": 0.9177083333333333,
+  "fake_locks": 3.8583333333333334
  },
  {
   "attacker": "v5l",
   "frames": "clean",
   "counter": "thr0.85",
   "cand": 27.725,
-  "nms_ms": 0.25379178748607956,
-  "inf_ms": 114.99198480000814,
+  "nms_ms": 0.19867775002921917,
+  "inf_ms": 104.11945744999684,
   "player_conf_median": 0.9099299311637878,
   "player_in_output": 0.75,
-  "hit10": 0.7489583333333333
+  "hit10": 0.7489583333333333,
+  "fake_locks": 2.0166666666666666
  },
  {
   "attacker": "v5l",
   "frames": "band eps=8/255",
   "counter": "stock",
   "cand": 11.075,
-  "nms_ms": 0.189343675060627,
-  "inf_ms": 114.99198480000814,
+  "nms_ms": 0.20936189989697596,
+  "inf_ms": 104.11945744999684,
   "player_conf_median": 0.6528988778591156,
   "player_in_output": 0.5875,
-  "hit10": 0.5791666666666667
+  "hit10": 0.5791666666666667,
+  "fake_locks": 0.4541666666666667
  },
  {
   "attacker": "v5l",
   "frames": "band eps=8/255",
   "counter": "top1",
   "cand": 11.075,
-  "nms_ms": 0.2020067250214197,
-  "inf_ms": 114.99198480000814,
+  "nms_ms": 0.18196872501903272,
+  "inf_ms": 104.11945744999684,
   "player_conf_median": 0.6528988778591156,
   "player_in_output": 0.5875,
-  "hit10": 0.5822916666666667
+  "hit10": 0.5822916666666667,
+  "fake_locks": 0.2833333333333333
  },
  {
   "attacker": "v5l",
   "frames": "band eps=8/255",
   "counter": "nocap",
   "cand": 11.075,
-  "nms_ms": 0.18976974996576246,
-  "inf_ms": 114.99198480000814,
+  "nms_ms": 0.1861248000636806,
+  "inf_ms": 104.11945744999684,
   "player_conf_median": 0.6528988778591156,
   "player_in_output": 0.5875,
-  "hit10": 0.5791666666666667
+  "hit10": 0.5791666666666667,
+  "fake_locks": 0.4541666666666667
  },
  {
   "attacker": "v5l",
   "frames": "band eps=8/255",
   "counter": "thr0.85",
   "cand": 11.075,
-  "nms_ms": 0.1860930126099447,
-  "inf_ms": 114.99198480000814,
+  "nms_ms": 0.13523173754492746,
+  "inf_ms": 104.11945744999684,
   "player_conf_median": 0.6528988778591156,
   "player_in_output": 0.2,
-  "hit10": 0.2
+  "hit10": 0.2,
+  "fake_locks": 0.0
  },
  {
   "attacker": "v8n",
   "frames": "clean",
   "counter": "stock",
   "cand": 12.8625,
-  "nms_ms": 0.19881795000173952,
+  "nms_ms": 0.2044403374839021,
   "inf_ms": 0.0,
   "player_conf_median": 0.8462218046188354,
   "player_in_output": 0.9375,
-  "hit10": 0.8927083333333333
+  "hit10": 0.8927083333333333,
+  "fake_locks": 2.402083333333333
  },
  {
   "attacker": "v8n",
   "frames": "clean",
   "counter": "top1",
   "cand": 12.8625,
-  "nms_ms": 0.1864970249698672,
+  "nms_ms": 0.1757571373900646,
   "inf_ms": 0.0,
   "player_conf_median": 0.8462218046188354,
   "player_in_output": 0.925,
-  "hit10": 0.9177083333333333
+  "hit10": 0.9177083333333333,
+  "fake_locks": 1.0031250000000003
  },
  {
   "attacker": "v8n",
   "frames": "clean",
   "counter": "nocap",
   "cand": 12.8625,
-  "nms_ms": 0.18698809998340948,
+  "nms_ms": 0.18907021245695432,
   "inf_ms": 0.0,
   "player_conf_median": 0.8462218046188354,
   "player_in_output": 0.9375,
-  "hit10": 0.8927083333333333
+  "hit10": 0.8927083333333333,
+  "fake_locks": 2.402083333333333
  },
  {
   "attacker": "v8n",
   "frames": "clean",
   "counter": "thr0.85",
   "cand": 12.8625,
-  "nms_ms": 0.19402427501518105,
+  "nms_ms": 0.2536629000587709,
   "inf_ms": 0.0,
   "player_conf_median": 0.8462218046188354,
   "player_in_output": 0.475,
-  "hit10": 0.475
+  "hit10": 0.475,
+  "fake_locks": 0.0
  },
  {
   "attacker": "v8n",
   "frames": "band eps=8/255",
   "counter": "stock",
   "cand": 4.35,
-  "nms_ms": 0.09426562501175795,
+  "nms_ms": 0.0962910624707547,
   "inf_ms": 0.0,
   "player_conf_median": 0.08263939991593361,
   "player_in_output": 0.4,
-  "hit10": 0.396875
+  "hit10": 0.396875,
+  "fake_locks": 0.17395833333333335
  },
  {
   "attacker": "v8n",
   "frames": "band eps=8/255",
   "counter": "top1",
   "cand": 4.35,
-  "nms_ms": 0.10043163749742234,
+  "nms_ms": 0.10323329996708708,
   "inf_ms": 0.0,
   "player_conf_median": 0.08263939991593361,
   "player_in_output": 0.4,
-  "hit10": 0.39791666666666664
+  "hit10": 0.39791666666666664,
+  "fake_locks": 0.11666666666666667
  },
  {
   "attacker": "v8n",
   "frames": "band eps=8/255",
   "counter": "nocap",
   "cand": 4.35,
-  "nms_ms": 0.1003272500724961,
+  "nms_ms": 0.11930509997455374,
   "inf_ms": 0.0,
   "player_conf_median": 0.08263939991593361,
   "player_in_output": 0.4,
-  "hit10": 0.396875
+  "hit10": 0.396875,
+  "fake_locks": 0.17395833333333335
  },
  {
   "attacker": "v8n",
   "frames": "band eps=8/255",
   "counter": "thr0.85",
   "cand": 4.35,
-  "nms_ms": 0.06259801249370867,
+  "nms_ms": 0.06542943750673658,
   "inf_ms": 0.0,
   "player_conf_median": 0.08263939991593361,
   "player_in_output": 0.1375,
-  "hit10": 0.1375
+  "hit10": 0.1375,
+  "fake_locks": 0.0
  }
 ]
