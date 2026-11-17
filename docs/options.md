@@ -346,6 +346,39 @@ Inference for comparison: v5n 20 ms, v5s 39 ms, v5m 65 ms.
 * **Retraining strips phantoms.** The perishability argument rests on retraining against layout A *not* transferring to layout B. → **Cross-layout rotation experiment** (most important next step).
 * **No transfer to unseen v5m.** → Add v5m (and NanoDet) to the proxy ensemble, with EOT.
 
+### 5.13 Phantoms above a normal-looking player, YOLOv5 n/s/m ensemble (`sponge_band.py`)
+**Objective.**
+* Phantoms (every stride-8 cell and anchor outside players, half-prior boxes) are pushed to confidence ≥ 0.9.
+* The real player's best box is held in a band of [0.6, 0.8]. The player stays detected but never out-ranks the phantoms; otherwise "keep the top-1 box" would be a free fix.
+* Proxies YOLOv5 n/s/m (IC-style ensemble), EOT, 60 steps, 32 test scenes.
+* Held out (never used by the defender): YOLOv5l and YOLOv8n.
+* Scoring uses RootKit post-processing (conf 0.4, IoU 0.4, closest to centre, gain 0.4) under the cheater's counter-measures: **stock** `max_det = 10`, **top1** `max_det = 1`, **nocap** `max_det = 1000`, **thr0.85**.
+
+Hit within 10 aiming steps (player kept in output in parentheses):
+
+| attacker | clean, stock | band ε = 8, stock | top1 | nocap | thr0.85 | band ε = 16, stock | top1 | nocap | thr0.85 |
+|---|---|---|---|---|---|---|---|---|---|
+| v5n | 0.87 (0.94) | **0.40** (0.62) | 0.57 | 0.39 | 0.03 | **0.37** (0.59) | 0.42 | 0.38 | 0.00 |
+| v5s | 0.83 (0.91) | **0.27** (0.59) | 0.51 | 0.23 | 0.06 | **0.16** (0.41) | 0.49 | 0.15 | 0.03 |
+| v5m | 0.90 (0.97) | **0.34** (0.78) | 0.70 | 0.33 | 0.19 | **0.26** (0.66) | 0.62 | 0.24 | 0.03 |
+| v5l (held out) | 0.89 | 0.85 | 0.87 | 0.85 | 0.41 | 0.84 | 0.86 | 0.84 | 0.34 |
+| v8n (held out) | 0.87 | 0.84 | 0.85 | 0.84 | 0.28 | 0.74 | 0.74 | 0.74 | 0.22 |
+
+On clean frames, thr0.85 gives v5n/s/m 0.28 / 0.41 / 0.62, so raising the threshold hurts the cheater anyway.
+
+* **Player median confidence:** clean 0.76 / 0.84 / 0.87 (n/s/m); cloaked 0.41–0.42 / 0.33–0.52 / 0.57–0.71.
+* **Candidates per frame:** 31 / 75–117 / 50–71. NMS ≤ 0.5 ms.
+
+**Reading.**
+1. **With m in the ensemble the stock aimbot is hurt at all three sizes** (hit@10 0.16–0.40 against 0.83–0.90 clean), while the player is still in the output in 41–78 % of frames. The aimbot "sees" the player but is pulled onto phantoms.
+2. **The player band was only partly met.** Median player confidence is 0.33–0.71 rather than 0.6–0.8; the phantom and EOT terms win the budget. → Raise the player-band weight, or add steps.
+3. **Counter-measures:**
+   * *top1* is the cheater's best move, but it only partly recovers (0.42–0.70 against 0.86–0.92 clean). Phantoms win the top-1 slot in 38–72 % of frames.
+   * *nocap* changes nothing.
+   * *Raising the threshold* kills the cheater's own aimbot, and already hurts on clean frames.
+4. **Energy is still negligible** (≤ 0.5 ms NMS against 18–60 ms inference).
+5. **Transfer to held-out models is weak:** v5l 0.84–0.85, v8n 0.74–0.84. IC also reports partial transfer; adding more architectures (l, v8, NanoDet) to the ensemble is the standard fix.
+
 ## 6. Recommended next steps
 1. **Move to real game frames and proxy ensembles** (CS2 / CF captures, or an open-source shooter with engine ground truth). Keep EOT on by default.
 2. **Redesign the slowdown objective to be temporally correlated** (O8). Options: (a) per-engagement consistent aim bias, so the aimbot converges confidently onto a point just off the hitbox; (b) a decoy closer to the crosshair than the real player, kept stable for several frames and then moved, so the controller keeps re-acquiring; (c) offsets matched to the smoothing gain to cause overshoot. Measure the time-to-hit *distribution*, plus false locks as evidence.
